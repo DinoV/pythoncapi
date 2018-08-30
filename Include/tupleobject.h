@@ -53,8 +53,12 @@ PyAPI_FUNC(PyObject *) PyTuple_Pack(Py_ssize_t, ...);
 PyAPI_FUNC(void) _PyTuple_MaybeUntrack(PyObject *);
 #endif
 
+#ifdef Py_NEWCAPI_BORROWED_REF
+#define PyTuple_GET_ITEM(op, i) PyTuple_GetItem(op, i)
+#define PyTuple_GET_SIZE(op, i) PyTuple_Size(op, i)
+#define PyTuple_SET_ITEM(op, i, v) PyTuple_SetItem(op, i, v)
+#elif !defined(Py_LIMITED_API)
 /* Macro, trading safety for speed */
-#ifndef Py_LIMITED_API
 #define PyTuple_GET_ITEM(op, i) (((PyTupleObject *)(op))->ob_item[i])
 #define PyTuple_GET_SIZE(op)    (assert(PyTuple_Check(op)),Py_SIZE(op))
 

@@ -1,4 +1,3 @@
-#define Py_NEWCAPI
 #include <Python.h>
 #include "capitest.h"
 

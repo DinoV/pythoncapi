@@ -6,6 +6,13 @@ The intent is to experiment to implement the new C API described at:
 
    https://pythoncapi.readthedocs.io/
 
+Build and run unit tests::
+
+   ./configure --with-shared --with-pydebug
+   make
+   cd capi/tests
+   make
+
 The changes live in the **pythoncapi** branch. See also:
 
 * `github.com/pythoncapi/cpython <https://github.com/pythoncapi/cpython>`_

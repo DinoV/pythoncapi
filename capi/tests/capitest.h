@@ -36,8 +36,14 @@ typedef struct {
 
 #define capitest_TestSuite_INIT {.ntest = 0}
 
-void capitest_register(capitest_TestSuite *suite, const char *name, capitest_TestFunc func);
-void capitest_run_test(capitest_Test *test);
-int capitest_run_testsuite(capitest_TestSuite *suite);
+int capitest_testsuite_add(capitest_TestSuite *suite, const char *name, capitest_TestFunc func);
+void capitest_test_run(capitest_Test *test);
+int capitest_testsuite_run(capitest_TestSuite *suite);
+int capitest_testsuite_clear(capitest_TestSuite *suite);
+
+#define CAPITEST_REGISTER(suite, test_func) capitest_testsuite_add(suite, #test_func, test_func)
+
+int register_test_tuple(capitest_TestSuite *suite);
+
 
 #endif   /* CAPITEST_H */

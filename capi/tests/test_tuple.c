@@ -53,13 +53,14 @@ test_PyTuple_GET_ITEM(void)
     return capitest_SUCCESS();
 }
 
-#define CAPITEST_REGISTER(suite, test_func) capitest_register(&suite, #test_func, test_func)
-
-
-int main()
+int
+register_test_tuple(capitest_TestSuite *suite)
 {
-    capitest_TestSuite suite = capitest_TestSuite_INIT ;
-    CAPITEST_REGISTER(suite, test_PyTuple_New);
-    CAPITEST_REGISTER(suite, test_PyTuple_GET_ITEM);
-    return capitest_run_testsuite(&suite);
+    if (CAPITEST_REGISTER(suite, test_PyTuple_New) < 0) {
+        return -1;
+    }
+    if (CAPITEST_REGISTER(suite, test_PyTuple_GET_ITEM) < 0) {
+        return -1;
+    }
+    return 0;
 }

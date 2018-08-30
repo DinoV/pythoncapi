@@ -4,20 +4,22 @@
 #include "capitest.h"
 
 
-/* FIXME: handle error */
-void
-capitest_register(capitest_TestSuite *suite, const char *name, capitest_TestFunc func)
+int
+capitest_testsuite_add(capitest_TestSuite *suite, const char *name, capitest_TestFunc func)
 {
     capitest_Test test = {.name = name, .func = func};
-    assert(suite->ntest < Py_ARRAY_LENGTH(suite->tests));
+    if (suite->ntest >= Py_ARRAY_LENGTH(suite->tests)) {
+        return -1;
+    }
     size_t i = suite->ntest;
     suite->ntest++;
     suite->tests[i] = test;
+    return 0;
 }
 
 
 void
-capitest_run_test(capitest_Test *test)
+capitest_test_run(capitest_Test *test)
 {
     printf("%s: ", test->name);
     fflush(stdout);
@@ -41,13 +43,13 @@ capitest_run_test(capitest_Test *test)
 
 
 int
-capitest_run_testsuite(capitest_TestSuite *suite)
+capitest_testsuite_run(capitest_TestSuite *suite)
 {
     size_t nfail = 0;
     Py_Initialize();
     for (size_t i=0; i < suite->ntest; i++) {
         capitest_Test *test = &suite->tests[i];
-        capitest_run_test(test);
+        capitest_test_run(test);
         if (test->result.result != capitest_enum_SUCCESS) {
             nfail++;
         }

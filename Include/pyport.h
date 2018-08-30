@@ -792,4 +792,9 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
 #define WITH_THREAD
 #endif
 
+/* New C API */
+#ifdef Py_NEWCAPI
+#  define Py_NEWCAPI_BORROWED_REF
+#endif
+
 #endif /* Py_PYPORT_H */

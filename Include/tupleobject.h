@@ -55,7 +55,7 @@ PyAPI_FUNC(void) _PyTuple_MaybeUntrack(PyObject *);
 
 #ifdef Py_NEWCAPI_BORROWED_REF
 #define PyTuple_GET_ITEM(op, i) PyTuple_GetItem(op, i)
-#define PyTuple_GET_SIZE(op, i) PyTuple_Size(op, i)
+#define PyTuple_GET_SIZE(op) PyTuple_Size(op)
 #define PyTuple_SET_ITEM(op, i, v) PyTuple_SetItem(op, i, v)
 #elif !defined(Py_LIMITED_API)
 /* Macro, trading safety for speed */

@@ -48,6 +48,7 @@ START_TEST(test_PyTuple_New)
 END_TEST
 
 
+#ifndef Py_NO_BORROWED_REF
 static void
 check_PyTuple_GetItem(int use_macro)
 {
@@ -65,6 +66,7 @@ check_PyTuple_GetItem(int use_macro)
 
     for (int i=i; i < size; i++) {
         PyObject *obj;   /* borrowed reference */
+        Py_ssize_t refcnt = Py_REFCNT(items[i]);
         if (use_macro) {
             obj = PyTuple_GET_ITEM(tuple, i);
         }
@@ -72,6 +74,7 @@ check_PyTuple_GetItem(int use_macro)
             obj = PyTuple_GetItem(tuple, i);
         }
         ck_assert_ptr_eq(obj, items[i]);
+        ck_assert_int_eq(Py_REFCNT(obj), refcnt);
     }
 
     for (int i=i; i < size; i++) {
@@ -93,6 +96,7 @@ START_TEST(test_PyTuple_GET_ITEM)
     check_PyTuple_GetItem(1);
 }
 END_TEST
+#endif /* Py_NO_BORROWED_REF */
 
 
 static void
@@ -170,7 +174,9 @@ START_TEST(test_PyTuple_Pack)
     PyObject *tuple = PyTuple_Pack(size, items[0], items[1], items[2]);
     ck_assert_int_eq(PyTuple_Size(tuple), size);
     for (int i=0; i < size; i++) {
-        ck_assert_ptr_eq(PyTuple_GetItem(tuple, i), items[i]);
+        PyObject *item = PyTuple_GetItemRef(tuple, i);
+        ck_assert_ptr_eq(item, items[i]);
+        Py_DECREF(item);
     }
 
     for (int i=0; i < size; i++) {
@@ -184,8 +190,10 @@ void register_PyTuple(Suite *s)
 {
     TCase *tc_core = tcase_create("Py_Tuple");
     tcase_add_test(tc_core, test_PyTuple_New);
+#ifndef Py_NO_BORROWED_REF
     tcase_add_test(tc_core, test_PyTuple_GetItem);
     tcase_add_test(tc_core, test_PyTuple_GET_ITEM);
+#endif
     tcase_add_test(tc_core, test_PyTuple_Size);
     tcase_add_test(tc_core, test_PyTuple_GET_SIZE);
     tcase_add_test(tc_core, test_PyTuple_CheckExact);

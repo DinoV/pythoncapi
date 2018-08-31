@@ -14,7 +14,7 @@ Build and run unit tests::
 
    ./configure --enable-shared --with-pydebug
    make
-   cd capi/tests
+   cd capi_tests
    make
 
 The changes live in the **pythoncapi** branch. See also:

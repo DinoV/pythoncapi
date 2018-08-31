@@ -53,7 +53,7 @@ create_tuple(const size_t size, PyObject **items)
 {
     PyObject *tuple = PyTuple_New(size);
     ck_assert_ptr_nonnull(tuple);
-    for (size_t i=0; i < size; i++) {
+    for (size_t i = 0; i < size; i++) {
         PyObject *obj = PyLong_FromLong(i);
         ck_assert_ptr_nonnull(obj);
         int res = PyTuple_SetItem(tuple, i, obj);
@@ -68,7 +68,7 @@ static void
 free_tuple(PyObject *tuple, PyObject **items)
 {
     size_t size = PyTuple_Size(tuple);
-    for (size_t i=0; i < size; i++) {
+    for (size_t i = 0; i < size; i++) {
         Py_DECREF(items);
     }
     Py_DECREF(tuple);
@@ -81,7 +81,7 @@ START_TEST(test_PyTuple_GetItemRef)
     PyObject* items[size];   /* strong references */
     PyObject *tuple = create_tuple(size, items);
 
-    for (size_t i=0; i < size; i++) {
+    for (size_t i = 0; i < size; i++) {
         PyObject *obj;   /* borrowed reference */
         Py_ssize_t refcnt = Py_REFCNT(items[i]);
         obj = PyTuple_GetItemRef(tuple, i);
@@ -103,7 +103,7 @@ check_PyTuple_GetItem(int use_macro)
     PyObject* items[size];   /* strong references */
     PyObject *tuple = create_tuple(size, items);
 
-    for (size_t i=0; i < size; i++) {
+    for (size_t i = 0; i < size; i++) {
         PyObject *obj;   /* borrowed reference */
         Py_ssize_t refcnt = Py_REFCNT(items[i]);
         if (use_macro) {
@@ -140,7 +140,7 @@ check_PyTuple_SizeN(size_t size, int use_macro)
 {
     PyObject *tuple = PyTuple_New(size);
     ck_assert_ptr_nonnull(tuple);
-    for (size_t i=0; i < size; i++) {
+    for (size_t i = 0; i < size; i++) {
         int res = PyTuple_SetItem(tuple, i, Py_None);
         ck_assert_int_eq(res, 0);
     }
@@ -201,20 +201,20 @@ START_TEST(test_PyTuple_Pack)
     const size_t size = 3;
     PyObject* items[size];
 
-    for (size_t i=0; i < size; i++) {
+    for (size_t i = 0; i < size; i++) {
         items[i] = PyLong_FromLong(i);
         ck_assert_ptr_nonnull(items[i]);
     }
 
     PyObject *tuple = PyTuple_Pack(size, items[0], items[1], items[2]);
     ck_assert_int_eq(PyTuple_Size(tuple), size);
-    for (size_t i=0; i < size; i++) {
+    for (size_t i = 0; i < size; i++) {
         PyObject *item = PyTuple_GetItemRef(tuple, i);
         ck_assert_ptr_eq(item, items[i]);
         Py_DECREF(item);
     }
 
-    for (size_t i=0; i < size; i++) {
+    for (size_t i = 0; i < size; i++) {
         Py_DECREF(items[i]);
     }
 }

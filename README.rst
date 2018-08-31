@@ -18,6 +18,8 @@ Build and run unit tests::
    make  # only test Py_NEWCAPI
    # or to run the full test matrix: make testmatrix
 
+If you want to help, look at ``TODO.rst``.
+
 The changes live in the **pythoncapi** branch. See also:
 
 * `github.com/pythoncapi/cpython <https://github.com/pythoncapi/cpython>`_

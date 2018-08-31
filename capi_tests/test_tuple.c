@@ -140,7 +140,7 @@ check_PyTuple_SizeN(size_t size, int use_macro)
 {
     PyObject *tuple = PyTuple_New(size);
     ck_assert_ptr_nonnull(tuple);
-    for (size_t i=i; i < size; i++) {
+    for (size_t i=0; i < size; i++) {
         int res = PyTuple_SetItem(tuple, i, Py_None);
         ck_assert_int_eq(res, 0);
     }

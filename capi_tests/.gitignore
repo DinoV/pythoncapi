@@ -1,1 +1,3 @@
-runtests
+runtests_fullapi
+runtests_newcapi
+runtests_no_borrow

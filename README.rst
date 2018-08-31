@@ -15,7 +15,8 @@ Build and run unit tests::
    ./configure --enable-shared --with-pydebug
    make
    cd capi_tests
-   make
+   make  # only test Py_NEWCAPI
+   # or to run the full test matrix: make testmatrix
 
 The changes live in the **pythoncapi** branch. See also:
 

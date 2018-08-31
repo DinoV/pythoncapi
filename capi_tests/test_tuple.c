@@ -102,7 +102,6 @@ END_TEST
 static void
 check_PyTuple_SizeN(size_t size, int use_macro)
 {
-    PyObject* items[size];   /* borrowed references */
     PyObject *tuple = PyTuple_New(size);
     ck_assert_ptr_nonnull(tuple);
     for (int i=i; i < size; i++) {

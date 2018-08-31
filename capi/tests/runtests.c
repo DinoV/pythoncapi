@@ -1,13 +1,31 @@
 #include <stdio.h>
-#include "capitest.h"
+#include <check.h>
+#include <Python.h>
 
-int main()
+void register_PyTuple(Suite *s);
+
+int main(void)
 {
-    capitest_TestSuite suite = capitest_TestSuite_INIT;
-    if (register_test_tuple(&suite) < 0) {
-        printf("failed to register test_tuple\n");
-        return 1;
+#if defined(PY_VERSION_HEX) && PY_VERSION_HEX >= 0x03080000
+    _PyCoreConfig config = _PyCoreConfig_INIT;
+    config._frozen = 1;   /* Disable warnings about missing prefix */
+    _PyInitError err = _Py_InitializeFromConfig(&config);
+    if (_Py_INIT_FAILED(err)) {
+        _Py_FatalInitError(err);
     }
-    int exitcode = capitest_testsuite_run(&suite);
-    return exitcode;
+#else
+    Py_Initialize();
+#endif
+
+    Suite *s = suite_create("CAPI");
+    register_PyTuple(s);
+    SRunner *sr = srunner_create(s);
+
+    srunner_run_all(sr, CK_NORMAL);
+    int number_failed = srunner_ntests_failed(sr);
+    srunner_free(sr);
+
+    Py_Finalize();
+
+    return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
 }

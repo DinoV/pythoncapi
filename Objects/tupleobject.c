@@ -187,6 +187,13 @@ PyTuple_SetItem(PyObject *op, Py_ssize_t i, PyObject *newitem)
     return 0;
 }
 
+int
+PyTuple_SetItemRef(PyObject *op, Py_ssize_t i, PyObject *newitem)
+{
+    Py_INCREF(newitem);
+    return PyTuple_SetItem(op, i, newitem);
+}
+
 void
 _PyTuple_MaybeUntrack(PyObject *op)
 {

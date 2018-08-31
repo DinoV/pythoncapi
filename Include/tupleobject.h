@@ -42,7 +42,10 @@ PyAPI_DATA(PyTypeObject) PyTupleIter_Type;
 
 PyAPI_FUNC(PyObject *) PyTuple_New(Py_ssize_t size);
 PyAPI_FUNC(Py_ssize_t) PyTuple_Size(PyObject *);
+#ifndef Py_NO_BORROWED_REF
 PyAPI_FUNC(PyObject *) PyTuple_GetItem(PyObject *, Py_ssize_t);
+#endif
+PyAPI_FUNC(PyObject *) PyTuple_GetItemRef(PyObject *, Py_ssize_t);
 PyAPI_FUNC(int) PyTuple_SetItem(PyObject *, Py_ssize_t, PyObject *);
 PyAPI_FUNC(PyObject *) PyTuple_GetSlice(PyObject *, Py_ssize_t, Py_ssize_t);
 #ifndef Py_LIMITED_API
@@ -54,16 +57,18 @@ PyAPI_FUNC(void) _PyTuple_MaybeUntrack(PyObject *);
 #endif
 
 #ifdef Py_NEWCAPI_BORROWED_REF
-#define PyTuple_GET_ITEM(op, i) PyTuple_GetItem(op, i)
-#define PyTuple_GET_SIZE(op) PyTuple_Size(op)
-#define PyTuple_SET_ITEM(op, i, v) PyTuple_SetItem(op, i, v)
+#  define PyTuple_GET_SIZE(op) PyTuple_Size(op)
+#  ifdef Py_NEWCAPI_BORROWED_REF
+#    define PyTuple_GET_ITEM(op, i) PyTuple_GetItem(op, i)
+#    define PyTuple_SET_ITEM(op, i, v) PyTuple_SetItem(op, i, v)
+#  endif
 #elif !defined(Py_LIMITED_API)
-/* Macro, trading safety for speed */
-#define PyTuple_GET_ITEM(op, i) (((PyTupleObject *)(op))->ob_item[i])
-#define PyTuple_GET_SIZE(op)    (assert(PyTuple_Check(op)),Py_SIZE(op))
+   /* Macro, trading safety for speed */
+#  define PyTuple_GET_ITEM(op, i) (((PyTupleObject *)(op))->ob_item[i])
+#  define PyTuple_GET_SIZE(op) (assert(PyTuple_Check(op)), Py_SIZE(op))
 
-/* Macro, *only* to be used to fill in brand new tuples */
-#define PyTuple_SET_ITEM(op, i, v) (((PyTupleObject *)(op))->ob_item[i] = v)
+   /* Macro, *only* to be used to fill in brand new tuples */
+#  define PyTuple_SET_ITEM(op, i, v) (((PyTupleObject *)(op))->ob_item[i] = v)
 #endif
 
 PyAPI_FUNC(int) PyTuple_ClearFreeList(void);

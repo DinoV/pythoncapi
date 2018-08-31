@@ -793,8 +793,12 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
 #endif
 
 /* New C API */
-#ifdef Py_NEWCAPI
-#  define Py_NEWCAPI_BORROWED_REF
+#ifdef Py_NEWCAPI_BORROWED_REF
+#  define Py_NEWCAPI
+#endif
+
+#if defined(Py_NEWCAPI) && !defined(Py_NEWCAPI_BORROWED_REF)
+#  define Py_NO_BORROWED_REF
 #endif
 
 #endif /* Py_PYPORT_H */

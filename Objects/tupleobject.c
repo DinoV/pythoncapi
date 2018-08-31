@@ -159,6 +159,14 @@ PyTuple_GetItem(PyObject *op, Py_ssize_t i)
     return ((PyTupleObject *)op) -> ob_item[i];
 }
 
+PyObject *
+PyTuple_GetItemRef(PyObject *op, Py_ssize_t i)
+{
+    PyObject *item = PyTuple_GetItem(op, i);
+    Py_XINCREF(item);
+    return item;
+}
+
 int
 PyTuple_SetItem(PyObject *op, Py_ssize_t i, PyObject *newitem)
 {

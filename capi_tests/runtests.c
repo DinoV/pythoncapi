@@ -2,6 +2,7 @@
 #include <check.h>
 #include <Python.h>
 
+void register_PyObject(Suite *s);
 void register_PyTuple(Suite *s);
 
 int main(void)
@@ -18,6 +19,7 @@ int main(void)
 #endif
 
     Suite *s = suite_create("CAPI");
+    register_PyObject(s);
     register_PyTuple(s);
     SRunner *sr = srunner_create(s);
 

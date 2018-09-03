@@ -4,7 +4,7 @@ PYTHON_CFLAGS=-Wall -I $(CPYTHON_SRC) -I $(CPYTHON_SRC)/Include
 PYTHON_LDFLAGS=-l $(LIBPYTHON) -L $(CPYTHON_SRC)
 CFLAGS=$(shell pkg-config check --cflags) $(PYTHON_CFLAGS)
 LDFLAGS=$(shell pkg-config check --libs) $(PYTHON_LDFLAGS)
-SOURCES=runtests.c test_tuple.c
+SOURCES=runtests.c test_object.c test_tuple.c
 
 .PHONY: test_fullapi test_newcapi test_no_borrow
 .NOTPARALLEL: test_fullapi test_newcapi test_no_borrow

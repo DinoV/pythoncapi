@@ -56,6 +56,7 @@ START_TEST(test_PyTuple_New)
 
     PyObject *tuple = PyTuple_New(-1);
     ck_assert_ptr_null(tuple);
+    PyErr_Clear();
 }
 END_TEST
 
@@ -225,6 +226,7 @@ START_TEST(test_PyTuple_Pack)
         ck_assert_ptr_eq(item, items[i]);
         Py_DECREF(item);
     }
+    Py_DECREF(tuple);
 
     for (size_t i = 0; i < size; i++) {
         Py_DECREF(items[i]);

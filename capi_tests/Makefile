@@ -5,6 +5,8 @@ PYTHON_LDFLAGS=-l $(LIBPYTHON) -L $(CPYTHON_SRC)
 CFLAGS=$(shell pkg-config check --cflags) $(PYTHON_CFLAGS)
 LDFLAGS=$(shell pkg-config check --libs) $(PYTHON_LDFLAGS)
 SOURCES=runtests.c test_object.c test_tuple.c
+# CK_FORK=no to detect reference leaks
+ENV_RUNTEST=CK_FORK=no LD_LIBRARY_PATH=$(CPYTHON_SRC) PYTHONPATH=$(CPYTHON_SRC)/Lib
 
 .PHONY: test_fullapi test_newcapi test_no_borrow
 .NOTPARALLEL: test_fullapi test_newcapi test_no_borrow
@@ -15,15 +17,15 @@ testmatrix: test_fullapi test_newcapi test_no_borrow
 
 test_fullapi: runtests_fullapi
 	@echo "=== Full API tests ==="
-	LD_LIBRARY_PATH=$(CPYTHON_SRC) PYTHONPATH=$(CPYTHON_SRC)/Lib ./runtests_fullapi
+	$(ENV_RUNTEST) ./runtests_fullapi
 
 test_newcapi: runtests_newcapi
 	@echo "=== New C API tests ==="
-	LD_LIBRARY_PATH=$(CPYTHON_SRC) PYTHONPATH=$(CPYTHON_SRC)/Lib ./runtests_newcapi
+	$(ENV_RUNTEST) ./runtests_newcapi
 
 test_no_borrow: runtests_no_borrow
 	@echo "=== No borrowed reference tests ==="
-	LD_LIBRARY_PATH=$(CPYTHON_SRC) PYTHONPATH=$(CPYTHON_SRC)/Lib ./runtests_no_borrow
+	$(ENV_RUNTEST) ./runtests_no_borrow
 
 runtests_fullapi: $(SOURCES)
 	$(CC) -g -o $@ $^ $(CFLAGS) $(LDFLAGS)

@@ -18,6 +18,11 @@ int main(void)
     Py_Initialize();
 #endif
 
+    int exitcode;
+#ifdef Py_REF_DEBUG
+    Py_ssize_t ref_total = _Py_RefTotal;
+#endif
+
     Suite *s = suite_create("CAPI");
     register_PyObject(s);
     register_PyTuple(s);
@@ -27,7 +32,17 @@ int main(void)
     int number_failed = srunner_ntests_failed(sr);
     srunner_free(sr);
 
+    exitcode = (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
+
+#ifdef Py_REF_DEBUG
+    Py_ssize_t ref_diff = _Py_RefTotal - ref_total;
+    if (ref_diff != 0) {
+        printf("ERROR: total reference count changed: %+zi!\n", ref_diff);
+        exitcode = EXIT_FAILURE;
+    }
+#endif
+
     Py_Finalize();
 
-    return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
+    return exitcode;
 }

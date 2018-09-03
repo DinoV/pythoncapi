@@ -792,13 +792,25 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
 #define WITH_THREAD
 #endif
 
-/* New C API */
+/* New C API:
+ *   Py_NEWCAPI_BORROWED_REF: new C API with borrowed references
+ *   Py_NEWCAPI: new C API without borrowed references
+ *   Py_NEWCAPI_NO_MACRO: replace macros with function calls
+ *      PyTuple_GET_SIZE() becomes PyTuple_Size()
+ *   Py_NEWCAPI_NO_STRUCT: must not use PyObject.ob_refcnt or any other field
+ *      of Python object structures; structures should hide their fields:
+ *      compilation error.
+ */
 #ifdef Py_NEWCAPI_BORROWED_REF
 #  define Py_NEWCAPI
 #endif
 
-#if defined(Py_NEWCAPI) && !defined(Py_NEWCAPI_BORROWED_REF)
-#  define Py_NO_BORROWED_REF
+#if defined(Py_NEWCAPI)
+#  define Py_NEWCAPI_NO_STRUCT
+#  define Py_NEWCAPI_NO_MACRO
+#  ifndef Py_NEWCAPI_BORROWED_REF
+#    define Py_NO_BORROWED_REF
+#  endif
 #endif
 
 #endif /* Py_PYPORT_H */

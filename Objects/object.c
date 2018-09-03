@@ -39,6 +39,21 @@ _PyDebug_PrintTotalRefs(void) {
 }
 #endif /* Py_REF_DEBUG */
 
+
+void
+_Py_INCREF_impl(PyObject *op)
+{
+    Py_INCREF(op);
+}
+
+
+void
+_Py_DECREF_impl(PyObject *op)
+{
+    Py_DECREF(op);
+}
+
+
 /* Object allocation routines used by NEWOBJ and NEWVAROBJ macros.
    These are used by the individual routines for object creation.
    Do not call them otherwise, they do not initialize the object! */

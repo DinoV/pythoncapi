@@ -790,6 +790,12 @@ PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
 #endif
 #endif /* !Py_TRACE_REFS */
 
+#ifdef Py_NEWCAPI_NO_STRUCT
+PyAPI_FUNC(void) _Py_INCREF_impl(PyObject *op);
+#  define Py_INCREF(op) _Py_INCREF_impl(op)
+PyAPI_FUNC(void) _Py_DECREF_impl(PyObject *op);
+#  define Py_DECREF(op) _Py_DECREF_impl(op)
+#else
 #define Py_INCREF(op) (                         \
     _Py_INC_REFTOTAL  _Py_REF_DEBUG_COMMA       \
     ((PyObject *)(op))->ob_refcnt++)
@@ -803,6 +809,7 @@ PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
         else                                            \
             _Py_Dealloc(_py_decref_tmp);                \
     } while (0)
+#endif
 
 /* Safely decref `op` and set `op` to NULL, especially useful in tp_clear
  * and tp_dealloc implementations.

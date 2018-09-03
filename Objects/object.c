@@ -40,6 +40,28 @@ _PyDebug_PrintTotalRefs(void) {
 #endif /* Py_REF_DEBUG */
 
 
+Py_ssize_t
+_Py_REFCNT_impl(PyObject *op)
+{
+    return Py_REFCNT(op);
+}
+
+
+PyTypeObject*
+_Py_TYPE_impl(PyObject *op)
+{
+    return Py_TYPE(op);
+}
+
+
+Py_ssize_t
+_Py_SIZE_impl(PyObject *op)
+{
+    return Py_SIZE(op);
+}
+
+
+
 void
 _Py_INCREF_impl(PyObject *op)
 {

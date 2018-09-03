@@ -114,9 +114,18 @@ typedef struct {
     Py_ssize_t ob_size; /* Number of items in variable part */
 } PyVarObject;
 
+
+#ifdef Py_NEWCAPI_NO_STRUCT
+PyAPI_FUNC(Py_ssize_t) _Py_REFCNT_impl(PyObject *op);
+/* Py_REFCNT(op) = 1 is illegal */
+#define Py_REFCNT(ob) _Py_REFCNT_impl((PyObject*)(ob))
+PyAPI_FUNC(Py_ssize_t) _Py_SIZE_impl(PyObject *op);
+#define Py_SIZE(ob) _Py_SIZE_impl(ob)
+#else
 #define Py_REFCNT(ob)           (((PyObject*)(ob))->ob_refcnt)
-#define Py_TYPE(ob)             (((PyObject*)(ob))->ob_type)
 #define Py_SIZE(ob)             (((PyVarObject*)(ob))->ob_size)
+#endif
+
 
 #ifndef Py_LIMITED_API
 /********************* String Literals ****************************************/
@@ -434,6 +443,15 @@ typedef struct _typeobject {
 #endif
 } PyTypeObject;
 #endif
+
+
+#ifdef Py_NEWCAPI_NO_STRUCT
+PyAPI_FUNC(PyTypeObject*) _Py_TYPE_impl(PyObject *op);
+#define Py_TYPE(ob) _Py_TYPE_impl(ob)
+#else
+#define Py_TYPE(ob)             (((PyObject*)(ob))->ob_type)
+#endif
+
 
 typedef struct{
     int slot;    /* slot id, see below */

@@ -142,7 +142,7 @@ free_tuple(PyObject *tuple, PyObject **items)
 {
     size_t size = PyTuple_Size(tuple);
     for (size_t i = 0; i < size; i++) {
-        Py_DECREF(items);
+        Py_DECREF(items[i]);
     }
     Py_DECREF(tuple);
 }

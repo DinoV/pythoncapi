@@ -190,7 +190,7 @@ PyTuple_SetItem(PyObject *op, Py_ssize_t i, PyObject *newitem)
 int
 PyTuple_SetItemRef(PyObject *op, Py_ssize_t i, PyObject *newitem)
 {
-    Py_INCREF(newitem);
+    Py_XINCREF(newitem);
     return PyTuple_SetItem(op, i, newitem);
 }
 

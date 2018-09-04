@@ -276,6 +276,38 @@ check_PyTuple_SetItemRef(func_type ftype)
         Py_DECREF(obj2);
     }
     Py_DECREF(tuple);
+
+    /* Tuple items set explicitly to NULL */
+    tuple = PyTuple_New(size);
+    ck_assert_ptr_nonnull(tuple);
+    for (size_t i = 0; i < size; i++) {
+        switch (ftype)
+        {
+        case STRONG:
+        {
+            int res = PyTuple_SetItemRef(tuple, i, NULL);
+            ck_assert_int_eq(res, 0);
+            break;
+        }
+#ifndef Py_NEWCAPI
+        case BORROW:
+        {
+            int res = PyTuple_SetItem(tuple, i, NULL);
+            ck_assert_int_eq(res, 0);
+            break;
+        }
+        case MACRO:
+        {
+            PyTuple_SET_ITEM(tuple, i, NULL);
+            break;
+        }
+#endif
+        }
+
+        PyObject *item = PyTuple_GetItemRef(tuple, i);
+        ck_assert_ptr_null(item);
+    }
+    Py_DECREF(tuple);
 }
 
 

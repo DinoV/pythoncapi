@@ -337,24 +337,24 @@ pack_from_list(PyObject *obj, PyObject *items, PyObject *format,
     offset = NULL;
     for (i = 0; i < nitems; i++) {
         /* Loop invariant: args[j] are borrowed references or NULL. */
-        PyTuple_SET_ITEM(args, 0, obj);
-        for (j = 1; j < 2+nmemb; j++)
-            PyTuple_SET_ITEM(args, j, NULL);
+        PyTuple_SetItemRef(args, 0, obj);
+        for (j = 1; j < 2+nmemb; j++) {
+            PyTuple_SetItemRef(args, j, NULL);
+        }
 
-        Py_XDECREF(offset);
+        assert(offset == NULL);
         offset = PyLong_FromSsize_t(i*itemsize);
         if (offset == NULL) {
             ret = -1;
             break;
         }
         PyTuple_SetItemRef(args, 1, offset);
-        Py_DECREF(offset);
+        Py_CLEAR(offset);
 
         item = PySequence_Fast_GetItemRef(items, i);
         if ((PyBytes_Check(item) || PyLong_Check(item) ||
              PyFloat_Check(item)) && nmemb == 1) {
             PyTuple_SetItemRef(args, 2, item);
-            Py_DECREF(item);
             Py_DECREF(item);
         }
         else if ((PyList_Check(item) || PyTuple_Check(item)) &&
@@ -362,7 +362,6 @@ pack_from_list(PyObject *obj, PyObject *items, PyObject *format,
             for (j = 0; j < nmemb; j++) {
                 tmp = PySequence_Fast_GetItemRef(item, j);
                 PyTuple_SetItemRef(args, 2+j, tmp);
-                Py_DECREF(tmp);
                 Py_DECREF(tmp);
             }
             Py_DECREF(item);
@@ -383,11 +382,6 @@ pack_from_list(PyObject *obj, PyObject *items, PyObject *format,
         Py_DECREF(tmp);
     }
 
-    Py_INCREF(obj); /* args[0] */
-    /* args[1]: offset is either NULL or should be dealloc'd */
-    for (i = 2; i < 2+nmemb; i++) {
-        tmp = PyTuple_GetItemRef(args, i);
-    }
     Py_DECREF(args);
 
     Py_DECREF(pack_into);

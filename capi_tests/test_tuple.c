@@ -21,13 +21,9 @@
 
 #define SMALL_SIZE 5
 
-#ifndef Py_NO_BORROWED_REF
-#  define BORROW_REF
-#endif
-
 typedef enum {
     STRONG,
-#ifdef BORROW_REF
+#ifndef Py_NEWCAPI
     MACRO,
     BORROW
 #endif
@@ -165,7 +161,7 @@ check_PyTuple_GetItem(func_type ftype)
             obj = PyTuple_GetItemRef(tuple, i);
             ck_assert_int_eq(Py_REFCNT(obj), refcnt + 1);
             break;
-#ifdef BORROW_REF
+#ifndef Py_NEWCAPI
         case MACRO:
             obj = PyTuple_GET_ITEM(tuple, i);
             ck_assert_int_eq(Py_REFCNT(obj), refcnt);
@@ -193,7 +189,7 @@ START_TEST(test_PyTuple_GetItemRef)
 END_TEST
 
 
-#ifdef BORROW_REF
+#ifndef Py_NEWCAPI
 START_TEST(test_PyTuple_GetItem)
 {
     check_PyTuple_GetItem(BORROW);
@@ -206,7 +202,7 @@ START_TEST(test_PyTuple_GET_ITEM)
     check_PyTuple_GetItem(MACRO);
 }
 END_TEST
-#endif /* BORROW_REF */
+#endif /* !Py_NEWCAPI */
 
 
 START_TEST(test_PyTuple_Pack)
@@ -255,7 +251,7 @@ check_PyTuple_SetItemRef(func_type ftype)
             ck_assert_int_eq(Py_REFCNT(obj), refcnt + 1);
             break;
         }
-#ifdef BORROW_REF
+#ifndef Py_NEWCAPI
         case BORROW:
         {
             int res = PyTuple_SetItem(tuple, i, obj);
@@ -290,7 +286,7 @@ START_TEST(test_PyTuple_SetItemRef)
 END_TEST
 
 
-#ifdef BORROW_REF
+#ifndef Py_NEWCAPI
 START_TEST(test_PyTuple_SetItem)
 {
     check_PyTuple_SetItemRef(BORROW);
@@ -314,12 +310,12 @@ void register_PyTuple(Suite *s)
     tcase_add_test(tc_core, test_PyTuple_Size);
     tcase_add_test(tc_core, test_PyTuple_GET_SIZE);
     tcase_add_test(tc_core, test_PyTuple_GetItemRef);
-#ifdef BORROW_REF
+#ifndef Py_NEWCAPI
     tcase_add_test(tc_core, test_PyTuple_GetItem);
     tcase_add_test(tc_core, test_PyTuple_GET_ITEM);
 #endif
     tcase_add_test(tc_core, test_PyTuple_SetItemRef);
-#ifdef BORROW_REF
+#ifndef Py_NEWCAPI
     tcase_add_test(tc_core, test_PyTuple_SetItem);
     tcase_add_test(tc_core, test_PyTuple_SET_ITEM);
 #endif

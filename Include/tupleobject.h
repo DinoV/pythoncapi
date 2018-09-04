@@ -42,11 +42,11 @@ PyAPI_DATA(PyTypeObject) PyTupleIter_Type;
 
 PyAPI_FUNC(PyObject *) PyTuple_New(Py_ssize_t size);
 PyAPI_FUNC(Py_ssize_t) PyTuple_Size(PyObject *);
-#ifndef Py_NO_BORROWED_REF
+#ifndef Py_NEWCAPI
 PyAPI_FUNC(PyObject *) PyTuple_GetItem(PyObject *, Py_ssize_t);
 #endif
 PyAPI_FUNC(PyObject *) PyTuple_GetItemRef(PyObject *, Py_ssize_t);
-#ifndef Py_NO_BORROWED_REF
+#ifndef Py_NEWCAPI
 PyAPI_FUNC(int) PyTuple_SetItem(PyObject *, Py_ssize_t, PyObject *);
 #endif
 PyAPI_FUNC(int) PyTuple_SetItemRef(PyObject *, Py_ssize_t, PyObject *);

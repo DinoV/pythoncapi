@@ -792,31 +792,42 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
 #define WITH_THREAD
 #endif
 
-/* New C API:
- *   Py_NEWCAPI_BORROWED_REF: new C API with borrowed references
- *   Py_NEWCAPI: new C API without borrowed references
+/* New C API defines:
+ *
  *   Py_NEWCAPI_NO_MACRO: replace macros with function calls
  *      PyTuple_GET_SIZE() becomes PyTuple_Size()
  *   Py_NEWCAPI_NO_STRUCT: must not use PyObject.ob_refcnt or any other field
  *      of Python object structures; structures should hide their fields:
  *      compilation error.
+ *   Py_NEWCAPI: new C API without borrowed references, without macro,
+ *      without struct
+ *
+ * Related defines:
+ *
+ *   Py_NEWCAPI_BORROWED_REF: declare functions/macros using
+ *      borrowed references -- enabled by Py_NEWCAPI_NO_MACRO
+ *      and Py_NEWCAPI_NO_STRUCT.
  */
-#ifdef Py_NEWCAPI_BORROWED_REF
-#  define Py_NEWCAPI
+
+#if defined(Py_NEWCAPI)
+#  ifdef Py_NEWCAPI_BORROWED_REF
+#    error "Py_NEWCAPI and Py_NEWCAPI_BORROWED_REF are exclusive"
+#  endif
+
+   /* Py_NEWCAPI implies Py_NEWCAPI_NO_STRUCT and Py_NEWCAPI_NO_MACRO */
+#  define Py_NEWCAPI_NO_STRUCT
+#  define Py_NEWCAPI_NO_MACRO
 #endif
+
 #if defined(Py_NEWCAPI_NO_STRUCT) && !defined(Py_NEWCAPI_NO_MACRO)
    /* Py_NEWCAPI_NO_STRUCT implies Py_NEWCAPI_NO_MACRO */
 #  define Py_NEWCAPI_NO_MACRO
 #endif
 
-#if defined(Py_NEWCAPI)
-   /* Py_NEWCAPI implies Py_NEWCAPI_NO_STRUCT, Py_NEWCAPI_NO_MACRO
-      and Py_NO_BORROWED_REF (if Py_NEWCAPI_BORROWED_REF is not defined). */
-#  define Py_NEWCAPI_NO_STRUCT
-#  define Py_NEWCAPI_NO_MACRO
-#  ifndef Py_NEWCAPI_BORROWED_REF
-#    define Py_NO_BORROWED_REF
-#  endif
+#if ((defined(Py_NEWCAPI_NO_STRUCT) || defined(Py_NEWCAPI_NO_MACRO)) \
+     && !defined(Py_NEWCAPI) \
+     && !defined(Py_NEWCAPI_BORROWED_REF))
+#  define Py_NEWCAPI_BORROWED_REF
 #endif
 
 #endif /* Py_PYPORT_H */

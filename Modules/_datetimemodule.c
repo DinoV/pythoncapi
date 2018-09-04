@@ -629,7 +629,7 @@ time_alloc(PyTypeObject *type, Py_ssize_t aware)
                 sizeof(_PyDateTime_BaseTime));
     if (self == NULL)
         return (PyObject *)PyErr_NoMemory();
-    (void)PyObject_INIT(self, type);
+    PyObject_INIT(self, type);
     return self;
 }
 
@@ -644,7 +644,7 @@ datetime_alloc(PyTypeObject *type, Py_ssize_t aware)
                 sizeof(_PyDateTime_BaseDateTime));
     if (self == NULL)
         return (PyObject *)PyErr_NoMemory();
-    (void)PyObject_INIT(self, type);
+    PyObject_INIT(self, type);
     return self;
 }
 

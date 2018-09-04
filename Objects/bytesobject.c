@@ -85,7 +85,7 @@ _PyBytes_FromSize(Py_ssize_t size, int use_calloc)
         op = (PyBytesObject *)PyObject_Malloc(PyBytesObject_SIZE + size);
     if (op == NULL)
         return PyErr_NoMemory();
-    (void)PyObject_INIT_VAR(op, &PyBytes_Type, size);
+    PyObject_INIT_VAR(op, &PyBytes_Type, size);
     op->ob_shash = -1;
     if (!use_calloc)
         op->ob_sval[size] = '\0';
@@ -163,7 +163,7 @@ PyBytes_FromString(const char *str)
     op = (PyBytesObject *)PyObject_MALLOC(PyBytesObject_SIZE + size);
     if (op == NULL)
         return PyErr_NoMemory();
-    (void)PyObject_INIT_VAR(op, &PyBytes_Type, size);
+    PyObject_INIT_VAR(op, &PyBytes_Type, size);
     op->ob_shash = -1;
     memcpy(op->ob_sval, str, size+1);
     /* share short strings */
@@ -1508,7 +1508,7 @@ bytes_repeat(PyBytesObject *a, Py_ssize_t n)
     op = (PyBytesObject *)PyObject_MALLOC(PyBytesObject_SIZE + nbytes);
     if (op == NULL)
         return PyErr_NoMemory();
-    (void)PyObject_INIT_VAR(op, &PyBytes_Type, size);
+    PyObject_INIT_VAR(op, &PyBytes_Type, size);
     op->ob_shash = -1;
     op->ob_sval[size] = '\0';
     if (Py_SIZE(a) == 1 && n > 0) {
@@ -2967,7 +2967,7 @@ _PyBytes_Resize(PyObject **pv, Py_ssize_t newsize)
     }
     _Py_NewReference(*pv);
     sv = (PyBytesObject *) *pv;
-    Py_SIZE(sv) = newsize;
+    _Py_SET_SIZE(sv, newsize);
     sv->ob_sval[newsize] = '\0';
     sv->ob_shash = -1;          /* invalidate cached hash value */
     return 0;

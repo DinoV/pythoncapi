@@ -980,9 +980,9 @@ PyType_GenericAlloc(PyTypeObject *type, Py_ssize_t nitems)
         Py_INCREF(type);
 
     if (type->tp_itemsize == 0)
-        (void)PyObject_INIT(obj, type);
+        PyObject_INIT(obj, type);
     else
-        (void) PyObject_INIT_VAR((PyVarObject *)obj, type, nitems);
+        PyObject_INIT_VAR((PyVarObject *)obj, type, nitems);
 
     if (PyType_IS_GC(type))
         _PyObject_GC_TRACK(obj);
@@ -3993,7 +3993,7 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
     if (compatible_for_assignment(oldto, newto, "__class__")) {
         if (newto->tp_flags & Py_TPFLAGS_HEAPTYPE)
             Py_INCREF(newto);
-        Py_TYPE(self) = newto;
+        _Py_SET_TYPE(self, newto);
         if (oldto->tp_flags & Py_TPFLAGS_HEAPTYPE)
             Py_DECREF(oldto);
         return 0;
@@ -5156,7 +5156,7 @@ PyType_Ready(PyTypeObject *type)
        not NULL (it's initialized to &PyType_Type).      But coverity doesn't
        know that. */
     if (Py_TYPE(type) == NULL && base != NULL)
-        Py_TYPE(type) = Py_TYPE(base);
+        _Py_SET_TYPE(type, Py_TYPE(base));
 
     /* Initialize tp_bases */
     bases = type->tp_bases;

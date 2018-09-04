@@ -1281,9 +1281,7 @@ PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
     obj = (PyObject *) PyObject_MALLOC(struct_size + (size + 1) * char_size);
     if (obj == NULL)
         return PyErr_NoMemory();
-    obj = PyObject_INIT(obj, &PyUnicode_Type);
-    if (obj == NULL)
-        return NULL;
+    PyObject_INIT(obj, &PyUnicode_Type);
 
     unicode = (PyCompactUnicodeObject *)obj;
     if (is_ascii)

@@ -114,16 +114,20 @@ typedef struct {
     Py_ssize_t ob_size; /* Number of items in variable part */
 } PyVarObject;
 
+#define _Py_SIZE(ob) (((PyVarObject*)(ob))->ob_size)
+
+#define _Py_SET_SIZE(ob, size) \
+    do { _Py_SIZE(ob) = (size); } while (0)
 
 #ifdef Py_NEWCAPI_NO_STRUCT
 PyAPI_FUNC(Py_ssize_t) _Py_REFCNT_impl(PyObject *op);
 /* Py_REFCNT(op) = 1 is illegal */
 #define Py_REFCNT(ob) _Py_REFCNT_impl((PyObject*)(ob))
 PyAPI_FUNC(Py_ssize_t) _Py_SIZE_impl(PyObject *op);
-#define Py_SIZE(ob) _Py_SIZE_impl(ob)
+#define Py_SIZE(ob) _Py_SIZE_impl((PyObject *)(ob))
 #else
 #define Py_REFCNT(ob)           (((PyObject*)(ob))->ob_refcnt)
-#define Py_SIZE(ob)             (((PyVarObject*)(ob))->ob_size)
+#define Py_SIZE(ob) _Py_SIZE(ob)
 #endif
 
 
@@ -446,12 +450,14 @@ typedef struct _typeobject {
 
 
 
-#define _Py_TYPE(ob)   (((PyObject*)(ob))->ob_type)
+#define _Py_TYPE(ob)  (((PyObject*)(ob))->ob_type)
+#define _Py_SET_TYPE(ob, type) \
+    do { _Py_TYPE(ob) = (type); } while (0)
 
 #ifdef Py_NEWCAPI_NO_STRUCT
 #ifdef Py_NEWCAPI_BORROWED_REF
 PyAPI_FUNC(PyTypeObject*) _Py_TYPE_impl(PyObject *op);
-#define Py_TYPE(ob) _Py_TYPE_impl(ob)
+#define Py_TYPE(ob) _Py_TYPE_impl((PyObject *)(ob))
 #endif
 #else
 #define Py_TYPE(ob) _Py_TYPE(ob)
@@ -815,9 +821,9 @@ PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
 
 #ifdef Py_NEWCAPI_NO_STRUCT
 PyAPI_FUNC(void) _Py_INCREF_impl(PyObject *op);
-#  define Py_INCREF(op) _Py_INCREF_impl(op)
+#  define Py_INCREF(op) _Py_INCREF_impl((PyObject *)(op))
 PyAPI_FUNC(void) _Py_DECREF_impl(PyObject *op);
-#  define Py_DECREF(op) _Py_DECREF_impl(op)
+#  define Py_DECREF(op) _Py_DECREF_impl((PyObject *)(op))
 #else
 #define Py_INCREF(op) (                         \
     _Py_INC_REFTOTAL  _Py_REF_DEBUG_COMMA       \
@@ -878,8 +884,8 @@ PyAPI_FUNC(void) _Py_DECREF_impl(PyObject *op);
     } while (0)
 
 #ifdef Py_NEWCAPI_NO_STRUCT
-#  define Py_XINCREF(op) Py_IncRef(op)
-#  define Py_XDECREF(op) Py_DecRef(op)
+#  define Py_XINCREF(op) Py_IncRef((PyObject *)(op))
+#  define Py_XDECREF(op) Py_DecRef((PyObject *)(op))
 #else
 /* Macros to use in case the object pointer may be NULL: */
 #define Py_XINCREF(op)                                \

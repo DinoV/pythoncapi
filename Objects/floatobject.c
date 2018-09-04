@@ -124,7 +124,7 @@ PyFloat_FromDouble(double fval)
             return PyErr_NoMemory();
     }
     /* Inline PyObject_New */
-    (void)PyObject_INIT(op, &PyFloat_Type);
+    PyObject_INIT(op, &PyFloat_Type);
     op->ob_fval = fval;
     return (PyObject *) op;
 }
@@ -221,7 +221,7 @@ float_dealloc(PyFloatObject *op)
             return;
         }
         numfree++;
-        Py_TYPE(op) = (struct _typeobject *)free_list;
+        _Py_SET_TYPE(op, (struct _typeobject *)free_list);
         free_list = op;
     }
     else

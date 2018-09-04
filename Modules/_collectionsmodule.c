@@ -163,7 +163,7 @@ deque_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     MARK_END(b->rightlink);
 
     assert(BLOCKLEN >= 2);
-    Py_SIZE(deque) = 0;
+    _Py_SET_SIZE(deque, 0);
     deque->leftblock = b;
     deque->rightblock = b;
     deque->leftindex = CENTER + 1;
@@ -580,7 +580,7 @@ deque_clear(dequeobject *deque)
     /* Set the deque to be empty using the newly allocated block */
     MARK_END(b->leftlink);
     MARK_END(b->rightlink);
-    Py_SIZE(deque) = 0;
+    _Py_SET_SIZE(deque, 0);
     deque->leftblock = b;
     deque->rightblock = b;
     deque->leftindex = CENTER + 1;

@@ -7,6 +7,10 @@
 
 #define PY_SSIZE_T_CLEAN
 
+/* _testcapi.c relies on many low-level functions of the C API */
+#undef Py_NEWCAPI_NO_MACRO
+#undef Py_NEWCAPI_NO_STRUCT
+
 #include "Python.h"
 #include <float.h>
 #include "structmember.h"
@@ -5359,9 +5363,9 @@ PyInit__testcapi(void)
     if (m == NULL)
         return NULL;
 
-    Py_TYPE(&_HashInheritanceTester_Type)=&PyType_Type;
+    _Py_SET_TYPE(&_HashInheritanceTester_Type, &PyType_Type);
 
-    Py_TYPE(&test_structmembersType)=&PyType_Type;
+    _Py_SET_TYPE(&test_structmembersType, &PyType_Type);
     Py_INCREF(&test_structmembersType);
     /* don't use a name starting with "test", since we don't want
        test_capi to automatically call this */

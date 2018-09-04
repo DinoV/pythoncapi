@@ -822,9 +822,9 @@ PyWeakref_NewProxy(PyObject *ob, PyObject *callback)
             PyWeakReference *prev;
 
             if (PyCallable_Check(ob))
-                Py_TYPE(result) = &_PyWeakref_CallableProxyType;
+                _Py_SET_TYPE(result, &_PyWeakref_CallableProxyType);
             else
-                Py_TYPE(result) = &_PyWeakref_ProxyType;
+                _Py_SET_TYPE(result, &_PyWeakref_ProxyType);
             get_basic_refs(*list, &ref, &proxy);
             if (callback == NULL) {
                 if (proxy != NULL) {

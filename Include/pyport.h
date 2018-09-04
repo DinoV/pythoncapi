@@ -804,8 +804,14 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
 #ifdef Py_NEWCAPI_BORROWED_REF
 #  define Py_NEWCAPI
 #endif
+#if defined(Py_NEWCAPI_NO_STRUCT) && !defined(Py_NEWCAPI_NO_MACRO)
+   /* Py_NEWCAPI_NO_STRUCT implies Py_NEWCAPI_NO_MACRO */
+#  define Py_NEWCAPI_NO_MACRO
+#endif
 
 #if defined(Py_NEWCAPI)
+   /* Py_NEWCAPI implies Py_NEWCAPI_NO_STRUCT, Py_NEWCAPI_NO_MACRO
+      and Py_NO_BORROWED_REF (if Py_NEWCAPI_BORROWED_REF is not defined). */
 #  define Py_NEWCAPI_NO_STRUCT
 #  define Py_NEWCAPI_NO_MACRO
 #  ifndef Py_NEWCAPI_BORROWED_REF

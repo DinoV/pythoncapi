@@ -872,6 +872,10 @@ PyAPI_FUNC(void) _Py_DECREF_impl(PyObject *op);
         }                                       \
     } while (0)
 
+#ifdef Py_NEWCAPI_NO_STRUCT
+#  define Py_XINCREF(op) Py_IncRef(op)
+#  define Py_XDECREF(op) Py_DecRef(op)
+#else
 /* Macros to use in case the object pointer may be NULL: */
 #define Py_XINCREF(op)                                \
     do {                                              \
@@ -886,6 +890,7 @@ PyAPI_FUNC(void) _Py_DECREF_impl(PyObject *op);
         if (_py_xdecref_tmp != NULL)                  \
             Py_DECREF(_py_xdecref_tmp);               \
     } while (0)
+#endif
 
 #ifndef Py_LIMITED_API
 /* Safely decref `op` and set `op` to `op2`.

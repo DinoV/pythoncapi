@@ -360,8 +360,8 @@ PyAPI_DATA(PyTypeObject) PyUnicode_Type;
 PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
 
 #define PyUnicode_Check(op) \
-                 PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_UNICODE_SUBCLASS)
-#define PyUnicode_CheckExact(op) (Py_TYPE(op) == &PyUnicode_Type)
+                 PyType_FastSubclass(_Py_TYPE(op), Py_TPFLAGS_UNICODE_SUBCLASS)
+#define PyUnicode_CheckExact(op) (_Py_TYPE(op) == &PyUnicode_Type)
 
 /* Fast access macros */
 #ifndef Py_LIMITED_API

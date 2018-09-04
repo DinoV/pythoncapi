@@ -507,13 +507,13 @@ typedef struct _heaptypeobject {
 
 /* access macro to the members which are floating "behind" the object */
 #define PyHeapType_GET_MEMBERS(etype) \
-    ((PyMemberDef *)(((char *)etype) + Py_TYPE(etype)->tp_basicsize))
+    ((PyMemberDef *)(((char *)etype) + _Py_TYPE(etype)->tp_basicsize))
 #endif
 
 /* Generic type check */
 PyAPI_FUNC(int) PyType_IsSubtype(PyTypeObject *, PyTypeObject *);
 #define PyObject_TypeCheck(ob, tp) \
-    (Py_TYPE(ob) == (tp) || PyType_IsSubtype(Py_TYPE(ob), (tp)))
+    (_Py_TYPE(ob) == (tp) || PyType_IsSubtype(_Py_TYPE(ob), (tp)))
 
 PyAPI_DATA(PyTypeObject) PyType_Type; /* built-in 'type' */
 PyAPI_DATA(PyTypeObject) PyBaseObject_Type; /* built-in 'object' */
@@ -522,8 +522,8 @@ PyAPI_DATA(PyTypeObject) PySuper_Type; /* built-in 'super' */
 PyAPI_FUNC(unsigned long) PyType_GetFlags(PyTypeObject*);
 
 #define PyType_Check(op) \
-    PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_TYPE_SUBCLASS)
-#define PyType_CheckExact(op) (Py_TYPE(op) == &PyType_Type)
+    PyType_FastSubclass(_Py_TYPE(op), Py_TPFLAGS_TYPE_SUBCLASS)
+#define PyType_CheckExact(op) (_Py_TYPE(op) == &PyType_Type)
 
 PyAPI_FUNC(int) PyType_Ready(PyTypeObject *);
 PyAPI_FUNC(PyObject *) PyType_GenericAlloc(PyTypeObject *, Py_ssize_t);
@@ -779,9 +779,9 @@ PyAPI_FUNC(void) _PyDebug_PrintTotalRefs(void);
 #ifdef COUNT_ALLOCS
 PyAPI_FUNC(void) inc_count(PyTypeObject *);
 PyAPI_FUNC(void) dec_count(PyTypeObject *);
-#define _Py_INC_TPALLOCS(OP)    inc_count(Py_TYPE(OP))
-#define _Py_INC_TPFREES(OP)     dec_count(Py_TYPE(OP))
-#define _Py_DEC_TPFREES(OP)     Py_TYPE(OP)->tp_frees--
+#define _Py_INC_TPALLOCS(OP)    inc_count(_Py_TYPE(OP))
+#define _Py_INC_TPFREES(OP)     dec_count(_Py_TYPE(OP))
+#define _Py_DEC_TPFREES(OP)     _Py_TYPE(OP)->tp_frees--
 #define _Py_COUNT_ALLOCS_COMMA  ,
 #else
 #define _Py_INC_TPALLOCS(OP)
@@ -815,7 +815,7 @@ PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
 #else
 #define _Py_Dealloc(op) (                               \
     _Py_INC_TPFREES(op) _Py_COUNT_ALLOCS_COMMA          \
-    (*Py_TYPE(op)->tp_dealloc)((PyObject *)(op)))
+    (*_Py_TYPE(op)->tp_dealloc)((PyObject *)(op)))
 #endif
 #endif /* !Py_TRACE_REFS */
 

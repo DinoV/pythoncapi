@@ -241,8 +241,8 @@ PyAPI_FUNC(Py_ssize_t) _PyGC_CollectIfEnabled(void);
 
 /* Test if an object has a GC head */
 #ifndef Py_LIMITED_API
-#define PyObject_IS_GC(o) (PyType_IS_GC(Py_TYPE(o)) && \
-    (Py_TYPE(o)->tp_is_gc == NULL || Py_TYPE(o)->tp_is_gc(o)))
+#define PyObject_IS_GC(o) (PyType_IS_GC(_Py_TYPE(o)) && \
+    (_Py_TYPE(o)->tp_is_gc == NULL || _Py_TYPE(o)->tp_is_gc(o)))
 #endif
 
 PyAPI_FUNC(PyVarObject *) _PyObject_GC_Resize(PyVarObject *, Py_ssize_t);
@@ -377,7 +377,7 @@ PyAPI_FUNC(void) PyObject_GC_Del(void *);
 #define PyType_SUPPORTS_WEAKREFS(t) ((t)->tp_weaklistoffset > 0)
 
 #define PyObject_GET_WEAKREFS_LISTPTR(o) \
-    ((PyObject **) (((char *) (o)) + Py_TYPE(o)->tp_weaklistoffset))
+    ((PyObject **) (((char *) (o)) + _Py_TYPE(o)->tp_weaklistoffset))
 #endif
 
 #ifdef __cplusplus

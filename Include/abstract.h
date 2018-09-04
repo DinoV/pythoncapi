@@ -934,7 +934,7 @@ PyAPI_FUNC(PyObject *) PySequence_Fast(PyObject *o, const char* m);
    need to be corrected for a negative index. */
 #ifndef Py_LIMITED_API
 #define PySequence_ITEM(o, i)\
-    ( Py_TYPE(o)->tp_as_sequence->sq_item(o, i) )
+    ( _Py_TYPE(o)->tp_as_sequence->sq_item(o, i) )
 #endif
 
 /* Return a pointer to the underlying item array for

@@ -6,6 +6,33 @@ TODO list for new Python C API
   function?
 * Do we need ``PySequence_Fast_GetItemRef()``?
 
+Remove Py_TYPE()?
+=================
+
+Error::
+
+        PyErr_Format(PyExc_TypeError,
+                     "Struct() argument 1 must be a str or bytes object, "
+                     "not %.200s",
+                     Py_TYPE(format)->tp_name);
+
+Dealloc::
+
+   static void
+   s_dealloc(PyStructObject *s)
+   {
+       ...
+       Py_TYPE(s)->tp_free((PyObject *)s);
+   }
+
+Object size::
+
+    Py_ssize_t size = _PyObject_SIZE(Py_TYPE(self)) + sizeof(formatcode);
+
+Check type::
+
+   #define PyStruct_CheckExact(op) (Py_TYPE(op) == &PyStructType)
+
 Issues
 ======
 

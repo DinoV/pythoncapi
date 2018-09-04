@@ -22,11 +22,13 @@ PyAPI_FUNC(PyObject *) PyEval_CallObjectWithKeywords(
 #define PyEval_CallObject(callable, arg) \
     PyEval_CallObjectWithKeywords(callable, arg, (PyObject *)NULL)
 
+#ifndef Py_NEWCAPI
 PyAPI_FUNC(PyObject *) PyEval_CallFunction(PyObject *callable,
                                            const char *format, ...);
 PyAPI_FUNC(PyObject *) PyEval_CallMethod(PyObject *obj,
                                          const char *name,
                                          const char *format, ...);
+#endif
 
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(void) PyEval_SetProfile(Py_tracefunc, PyObject *);

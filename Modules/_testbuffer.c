@@ -337,11 +337,9 @@ pack_from_list(PyObject *obj, PyObject *items, PyObject *format,
     offset = NULL;
     for (i = 0; i < nitems; i++) {
         /* Loop invariant: args[j] are borrowed references or NULL. */
-        PyTuple_SetItemRef(args, 0, obj);
-        Py_DECREF(obj);
-        for (j = 1; j < 2+nmemb; j++) {
-            PyTuple_SetItemRef(args, j, NULL);
-        }
+        PyTuple_SET_ITEM(args, 0, obj);
+        for (j = 1; j < 2+nmemb; j++)
+            PyTuple_SET_ITEM(args, j, NULL);
 
         Py_XDECREF(offset);
         offset = PyLong_FromSsize_t(i*itemsize);

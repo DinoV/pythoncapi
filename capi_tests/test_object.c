@@ -147,6 +147,7 @@ START_TEST(test_Py_REFCNT)
 END_TEST
 
 
+#ifndef Py_NEWCAPI
 START_TEST(test_Py_TYPE)
 {
     PyObject *obj = PyLong_FromLong(5);
@@ -160,6 +161,7 @@ START_TEST(test_Py_TYPE)
     Py_DECREF(obj);
 }
 END_TEST
+#endif
 
 
 START_TEST(test_Py_SIZE)
@@ -292,7 +294,9 @@ void register_PyObject(Suite *s)
     tcase_add_test(testcase, test_Py_XSETREF);
     tcase_add_test(testcase, test_Py_REFCNT);
 
+#ifndef Py_NEWCAPI
     tcase_add_test(testcase, test_Py_TYPE);
+#endif
     tcase_add_test(testcase, test_Py_SIZE);
 
     tcase_add_test(testcase, test_Py_RETURN_NONE);

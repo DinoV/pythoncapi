@@ -19,18 +19,22 @@ testmatrix: test_fullapi test_newcapi test_no_borrow test_no_struct
 test_fullapi: runtests_fullapi
 	@echo "=== Full API tests ==="
 	$(ENV_RUNTEST) ./runtests_fullapi
+	@echo
 
 test_newcapi: runtests_newcapi
 	@echo "=== New C API tests (Py_NEWCAPI) ==="
 	$(ENV_RUNTEST) ./runtests_newcapi
+	@echo
 
 test_no_borrow: runtests_no_borrow
 	@echo "=== No borrowed reference tests (Py_NEWCAPI_BORROWED_REF) ==="
 	$(ENV_RUNTEST) ./runtests_no_borrow
+	@echo
 
 test_no_struct: runtests_no_struct
 	@echo "=== No struct tests (Py_NEWCAPI_NO_STRUCT) ==="
 	$(ENV_RUNTEST) ./runtests_no_struct
+	@echo
 
 runtests_fullapi: $(SOURCES)
 	$(CC) -g -o $@ $^ $(CFLAGS) $(LDFLAGS)

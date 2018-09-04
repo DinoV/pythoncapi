@@ -50,7 +50,7 @@ _Py_REFCNT_impl(PyObject *op)
 PyTypeObject*
 _Py_TYPE_impl(PyObject *op)
 {
-    return Py_TYPE(op);
+    return _Py_TYPE(op);
 }
 
 

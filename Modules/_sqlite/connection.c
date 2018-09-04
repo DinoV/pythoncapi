@@ -585,7 +585,8 @@ PyObject* _pysqlite_build_py_params(sqlite3_context *context, int argc, sqlite3_
             return NULL;
         }
 
-        PyTuple_SetItem(args, i, cur_py_value);
+        PyTuple_SetItemRef(args, i, cur_py_value);
+        Py_DECREF(cur_py_value);
 
     }
 
@@ -1465,8 +1466,8 @@ pysqlite_connection_iterdump(pysqlite_Connection* self, PyObject* args)
     if (!args) {
         goto finally;
     }
-    Py_INCREF(self);
-    PyTuple_SetItem(args, 0, (PyObject*)self);
+    PyTuple_SetItemRef(args, 0, (PyObject *)self);
+
     retval = PyObject_CallObject(pyfn_iterdump, args);
 
 finally:

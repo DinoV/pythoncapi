@@ -1503,7 +1503,8 @@ s_unpack_internal(PyStructObject *soself, const char *startfrom) {
             }
             if (v == NULL)
                 goto fail;
-            PyTuple_SET_ITEM(result, i++, v);
+            PyTuple_SetItemRef(result, i++, v);
+            Py_DECREF(v);
             res += code->size;
         }
     }

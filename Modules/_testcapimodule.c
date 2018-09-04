@@ -8,6 +8,7 @@
 #define PY_SSIZE_T_CLEAN
 
 /* _testcapi.c relies on many low-level functions of the C API */
+#undef Py_NEWCAPI
 #undef Py_NEWCAPI_NO_MACRO
 #undef Py_NEWCAPI_NO_STRUCT
 

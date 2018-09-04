@@ -1294,14 +1294,16 @@ array_array_buffer_info_impl(arrayobject *self)
         Py_DECREF(retval);
         return NULL;
     }
-    PyTuple_SET_ITEM(retval, 0, v);
+    PyTuple_SetItemRef(retval, 0, v);
+    Py_DECREF(v);
 
     v = PyLong_FromSsize_t(Py_SIZE(self));
     if (v == NULL) {
         Py_DECREF(retval);
         return NULL;
     }
-    PyTuple_SET_ITEM(retval, 1, v);
+    PyTuple_SetItemRef(retval, 1, v);
+    Py_DECREF(v);
 
     return retval;
 }
@@ -1933,8 +1935,10 @@ make_array(PyTypeObject *arraytype, char typecode, PyObject *items)
         return NULL;
     }
     Py_INCREF(items);
-    PyTuple_SET_ITEM(new_args, 0, typecode_obj);
-    PyTuple_SET_ITEM(new_args, 1, items);
+    PyTuple_SetItemRef(new_args, 0, typecode_obj);
+    Py_DECREF(typecode_obj);
+    PyTuple_SetItemRef(new_args, 1, items);
+    Py_DECREF(items);
 
     array_obj = array_new(arraytype, new_args, NULL);
     Py_DECREF(new_args);

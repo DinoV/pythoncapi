@@ -377,8 +377,10 @@ _build_rval_index_tuple(PyObject *rval, Py_ssize_t idx) {
         Py_DECREF(rval);
         return NULL;
     }
-    PyTuple_SET_ITEM(tpl, 0, rval);
-    PyTuple_SET_ITEM(tpl, 1, pyidx);
+    PyTuple_SetItemRef(tpl, 0, rval);
+    Py_DECREF(rval);
+    PyTuple_SetItemRef(tpl, 1, pyidx);
+    Py_DECREF(pyidx);
     return tpl;
 }
 
@@ -1622,13 +1624,13 @@ encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc,
             PyErr_SetString(PyExc_ValueError, "items must return 2-tuples");
             goto bail;
         }
-        key = PyTuple_GET_ITEM(item, 0);
+        key = PyTuple_GetItemRef(item, 0);
         if (PyUnicode_Check(key)) {
-            Py_INCREF(key);
             kstr = key;
         }
         else if (PyFloat_Check(key)) {
             kstr = encoder_encode_float(s, key);
+            Py_DECREF(key);
             if (kstr == NULL)
                 goto bail;
         }
@@ -1636,16 +1638,19 @@ encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc,
                         /* This must come before the PyLong_Check because
                            True and False are also 1 and 0.*/
             kstr = _encoded_const(key);
+            Py_DECREF(key);
             if (kstr == NULL)
                 goto bail;
         }
         else if (PyLong_Check(key)) {
             kstr = PyLong_Type.tp_str(key);
+            Py_DECREF(key);
             if (kstr == NULL) {
                 goto bail;
             }
         }
         else if (s->skipkeys) {
+            Py_DECREF(key);
             Py_DECREF(item);
             continue;
         }
@@ -1653,6 +1658,7 @@ encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc,
             PyErr_Format(PyExc_TypeError,
                          "keys must be str, int, float, bool or None, "
                          "not %.100s", key->ob_type->tp_name);
+            Py_DECREF(key);
             goto bail;
         }
 
@@ -1673,9 +1679,12 @@ encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc,
         if (_PyAccu_Accumulate(acc, s->key_separator))
             goto bail;
 
-        value = PyTuple_GET_ITEM(item, 1);
-        if (encoder_listencode_obj(s, acc, value, indent_level))
+        value = PyTuple_GetItemRef(item, 1);
+        if (encoder_listencode_obj(s, acc, value, indent_level)) {
+            Py_DECREF(value);
             goto bail;
+        }
+        Py_DECREF(value);
         idx += 1;
         Py_DECREF(item);
     }
@@ -1763,13 +1772,16 @@ encoder_listencode_list(PyEncoderObject *s, _PyAccu *acc,
         */
     }
     for (i = 0; i < PySequence_Fast_GET_SIZE(s_fast); i++) {
-        PyObject *obj = PySequence_Fast_GET_ITEM(s_fast, i);
         if (i) {
             if (_PyAccu_Accumulate(acc, s->item_separator))
                 goto bail;
         }
-        if (encoder_listencode_obj(s, acc, obj, indent_level))
+        PyObject *obj = PySequence_Fast_GetItemRef(s_fast, i);
+        if (encoder_listencode_obj(s, acc, obj, indent_level)) {
+            Py_DECREF(obj);
             goto bail;
+        }
+        Py_DECREF(obj);
     }
     if (ident != NULL) {
         if (PyDict_DelItem(s->markers, ident))

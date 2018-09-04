@@ -127,12 +127,14 @@ seq2set(PyObject *seq, fd_set *set, pylist fd2obj[FD_SETSIZE + 1])
         SOCKET v;
 
         /* any intervening fileno() calls could decr this refcnt */
-        if (!(o = PySequence_Fast_GET_ITEM(fast_seq, i)))
+        o = PySequence_Fast_GetItemRef(fast_seq, i);
+        if (!o) {
             goto finally;
-
-        Py_INCREF(o);
-        v = PyObject_AsFileDescriptor( o );
-        if (v == -1) goto finally;
+        }
+        v = PyObject_AsFileDescriptor(o);
+        if (v == -1) {
+            goto finally;
+        }
 
 #if defined(_MSC_VER)
         max = 0;                             /* not used for Win32 */
@@ -677,7 +679,8 @@ select_poll_poll_impl(pollObject *self, PyObject *timeout_obj)
             Py_DECREF(value);
             goto error;
         }
-        PyTuple_SET_ITEM(value, 0, num);
+        PyTuple_SetItemRef(value, 0, num);
+        Py_DECREF(num);
 
         /* The &0xffff is a workaround for AIX.  'revents'
            is a 16-bit short, and IBM assigned POLLNVAL
@@ -688,7 +691,8 @@ select_poll_poll_impl(pollObject *self, PyObject *timeout_obj)
             Py_DECREF(value);
             goto error;
         }
-        PyTuple_SET_ITEM(value, 1, num);
+        PyTuple_SetItemRef(value, 1, num);
+        Py_DECREF(num);
         if ((PyList_SetItem(result_list, j, value)) == -1) {
             Py_DECREF(value);
             goto error;

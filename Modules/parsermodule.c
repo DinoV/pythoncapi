@@ -81,6 +81,14 @@ typedef int (*SeqInserter) (PyObject* sequence,
  */
 
 
+static void
+node_PyTuple_SetItem(PyObject *tuple, Py_ssize_t i, PyObject *item)
+{
+    PyTuple_SetItemRef(tuple, i, item);
+    Py_DECREF(item);
+}
+
+
 static PyObject*
 node2tuple(node *n,                     /* node to convert               */
            SeqMaker mkseq,              /* create sequence               */
@@ -401,7 +409,7 @@ parser_st2tuple(PyST_Object *self, PyObject *args, PyObject *kw)
          *  since it's known to work already.
          */
         res = node2tuple(((PyST_Object*)self)->st_node,
-                         PyTuple_New, PyTuple_SetItem, line_info, col_info);
+                         PyTuple_New, node_PyTuple_SetItem, line_info, col_info);
     }
     return (res);
 }

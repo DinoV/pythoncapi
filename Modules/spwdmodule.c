@@ -68,10 +68,10 @@ sets(PyObject *v, int i, const char* val)
 {
   if (val) {
       PyObject *o = PyUnicode_DecodeFSDefault(val);
-      PyStructSequence_SET_ITEM(v, i, o);
+      PyStructSequence_SetItemRef(v, i, o);
+      Py_DECREF(o);
   } else {
-      PyStructSequence_SET_ITEM(v, i, Py_None);
-      Py_INCREF(Py_None);
+      PyStructSequence_SetItemRef(v, i, Py_None);
   }
 }
 
@@ -82,7 +82,7 @@ static PyObject *mkspent(struct spwd *p)
     if (v == NULL)
         return NULL;
 
-#define SETI(i,val) PyStructSequence_SET_ITEM(v, i, PyLong_FromLong((long) val))
+#define SETI(i,val) do { PyObject *item = PyLong_FromLong((long) val); PyStructSequence_SetItemRef(v, i, item); Py_DECREF(item); } while (0)
 #define SETS(i,val) sets(v, i, val)
 
     SETS(setIndex++, p->sp_namp);

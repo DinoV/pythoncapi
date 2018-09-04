@@ -929,6 +929,8 @@ PyAPI_FUNC(PyObject *) PySequence_Fast(PyObject *o, const char* m);
    by PySequence_Fast, and that i is within bounds. */
 #define PySequence_Fast_GET_ITEM(o, i)\
      (PyList_Check(o) ? PyList_GET_ITEM(o, i) : PyTuple_GET_ITEM(o, i))
+#define PySequence_Fast_GetItemRef(o, i)\
+     (PyList_Check(o) ? PyList_GetItemRef(o, i) : PyTuple_GetItemRef(o, i))
 
 /* Assume tp_as_sequence and sq_item exist and that 'i' does not
    need to be corrected for a negative index. */

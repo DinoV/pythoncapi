@@ -171,7 +171,8 @@ static void _CallPythonObject(void *mem,
                 Py_DECREF(cnv);
                 goto Done;
             }
-            PyTuple_SET_ITEM(arglist, i, v);
+            PyTuple_SetItemRef(arglist, i, v);
+            Py_DECREF(v);
             /* XXX XXX XX
                We have the problem that c_byte or c_short have dict->size of
                1 resp. 4, but these parameters are pushed as sizeof(int) bytes.
@@ -192,7 +193,8 @@ static void _CallPythonObject(void *mem,
                 goto Done;
             }
             memcpy(obj->b_ptr, *pArgs, dict->size);
-            PyTuple_SET_ITEM(arglist, i, (PyObject *)obj);
+            PyTuple_SetItemRef(arglist, i, (PyObject*)obj);
+            Py_DECREF(obj);
 #ifdef MS_WIN32
             TryAddRef(dict, obj);
 #endif

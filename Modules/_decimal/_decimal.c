@@ -2145,8 +2145,10 @@ PyDecType_FromFloatExact(PyTypeObject *type, PyObject *v,
     if (n_d == NULL) {
         return NULL;
     }
-    n = PyTuple_GET_ITEM(n_d, 0);
-    d = PyTuple_GET_ITEM(n_d, 1);
+    n = PyTuple_GetItemRef(n_d, 0);
+    d = PyTuple_GetItemRef(n_d, 1);
+    Py_DECREF(n);
+    Py_DECREF(d);
 
     tmp = _py_long_bit_length(d, NULL);
     if (tmp == NULL) {
@@ -2292,13 +2294,15 @@ dectuple_as_str(PyObject *dectuple)
     }
 
     /* sign */
-    tmp = PyTuple_GET_ITEM(dectuple, 0);
+    tmp = PyTuple_GetItemRef(dectuple, 0);
     if (!PyLong_Check(tmp)) {
+        Py_DECREF(tmp);
         PyErr_SetString(PyExc_ValueError,
             "sign must be an integer with the value 0 or 1");
         goto error;
     }
     sign = PyLong_AsLong(tmp);
+    Py_DECREF(tmp);
     if (sign == -1 && PyErr_Occurred()) {
         goto error;
     }
@@ -2311,7 +2315,7 @@ dectuple_as_str(PyObject *dectuple)
     sign_special[1] = '\0';
 
     /* exponent or encoding for a special number */
-    tmp = PyTuple_GET_ITEM(dectuple, 2);
+    tmp = PyTuple_GetItemRef(dectuple, 2);
     if (PyUnicode_Check(tmp)) {
         /* special */
         if (PyUnicode_CompareWithASCIIString(tmp, "F") == 0) {
@@ -2325,6 +2329,7 @@ dectuple_as_str(PyObject *dectuple)
             strcat(sign_special, "sNaN");
         }
         else {
+            Py_DECREF(tmp);
             PyErr_SetString(PyExc_ValueError,
                 "string argument in the third position "
                 "must be 'F', 'n' or 'N'");
@@ -2334,19 +2339,24 @@ dectuple_as_str(PyObject *dectuple)
     else {
         /* exponent */
         if (!PyLong_Check(tmp)) {
+            Py_DECREF(tmp);
             PyErr_SetString(PyExc_ValueError,
                 "exponent must be an integer");
             goto error;
         }
         exp = PyLong_AsSsize_t(tmp);
         if (exp == -1 && PyErr_Occurred()) {
+            Py_DECREF(tmp);
             goto error;
         }
     }
+    Py_DECREF(tmp);
 
     /* coefficient */
-    digits = sequence_as_tuple(PyTuple_GET_ITEM(dectuple, 1), PyExc_ValueError,
+    PyObject *arg = PyTuple_GetItemRef(dectuple, 1);
+    digits = sequence_as_tuple(arg, PyExc_ValueError,
                                "coefficient must be a tuple of digits");
+    Py_DECREF(arg);
     if (digits == NULL) {
         goto error;
     }
@@ -2373,13 +2383,15 @@ dectuple_as_str(PyObject *dectuple)
         *cp++ = '0';
     }
     for (i = 0; i < tsize; i++) {
-        tmp = PyTuple_GET_ITEM(digits, i);
+        tmp = PyTuple_GetItemRef(digits, i);
         if (!PyLong_Check(tmp)) {
+            Py_DECREF(tmp);
             PyErr_SetString(PyExc_ValueError,
                 "coefficient must be a tuple of digits");
             goto error;
         }
         l = PyLong_AsLong(tmp);
+        Py_DECREF(tmp);
         if (l == -1 && PyErr_Occurred()) {
             goto error;
         }
@@ -3595,7 +3607,8 @@ PyDec_AsTuple(PyObject *dec, PyObject *dummy UNUSED)
                 if (tmp == NULL) {
                     goto out;
                 }
-                PyTuple_SET_ITEM(coeff, i, tmp);
+                PyTuple_SetItemRef(coeff, i, tmp);
+                Py_DECREF(tmp);
             }
         }
         else {
@@ -5676,7 +5689,8 @@ PyInit__decimal(void)
 
         /* add to signal tuple */
         Py_INCREF(cm->ex);
-        PyTuple_SET_ITEM(SignalTuple, i, cm->ex);
+        PyTuple_SetItemRef(SignalTuple, i, cm->ex);
+        Py_DECREF(cm->ex);
     }
 
     /*

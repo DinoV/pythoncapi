@@ -274,7 +274,8 @@ call_character_handler(xmlparseobject *self, const XML_Char *buffer, int len)
                                     noop_character_data_handler);
         return -1;
     }
-    PyTuple_SET_ITEM(args, 0, temp);
+    PyTuple_SetItemRef(args, 0, temp);
+    Py_DECREF(temp);
     /* temp is now a borrowed reference; consider it unused. */
     self->in_callback = 1;
     temp = call_with_frame("CharacterData", __LINE__,
@@ -526,7 +527,8 @@ conv_content_model(XML_Content * const model,
                 Py_XDECREF(children);
                 return NULL;
             }
-            PyTuple_SET_ITEM(children, i, child);
+            PyTuple_SetItemRef(children, i, child);
+            Py_DECREF(child);
         }
         result = Py_BuildValue("(iiO&N)",
                                model->type, model->quant,

@@ -62,7 +62,7 @@ mkgrent(struct group *p)
         Py_DECREF(x);
     }
 
-#define SET(i,val) PyStructSequence_SET_ITEM(v, i, val)
+#define SET(i,val) do { PyStructSequence_SetItemRef(v, i, val); Py_DECREF(val); } while (0)
     SET(setIndex++, PyUnicode_DecodeFSDefault(p->gr_name));
     if (p->gr_passwd)
             SET(setIndex++, PyUnicode_DecodeFSDefault(p->gr_passwd));

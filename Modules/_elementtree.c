@@ -1130,8 +1130,7 @@ _elementtree_Element_extend(ElementObject *self, PyObject *elements)
     }
 
     for (i = 0; i < PySequence_Fast_GET_SIZE(seq); i++) {
-        PyObject* element = PySequence_Fast_GET_ITEM(seq, i);
-        Py_INCREF(element);
+        PyObject* element = PySequence_Fast_GetItemRef(seq, i);
         if (!PyObject_TypeCheck(element, (PyTypeObject *)&Element_Type)) {
             PyErr_Format(
                 PyExc_TypeError,
@@ -1923,8 +1922,7 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
         /* replace the slice */
         for (cur = start, i = 0; i < newlen;
              cur += step, i++) {
-            PyObject* element = PySequence_Fast_GET_ITEM(seq, i);
-            Py_INCREF(element);
+            PyObject* element = PySequence_Fast_GetItemRef(seq, i);
             self->extra->children[cur] = element;
         }
 
@@ -3636,7 +3634,7 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
     }
 
     for (i = 0; i < PySequence_Fast_GET_SIZE(events_seq); ++i) {
-        PyObject *event_name_obj = PySequence_Fast_GET_ITEM(events_seq, i);
+        PyObject *event_name_obj = PySequence_Fast_GetItemRef(events_seq, i);
         const char *event_name = NULL;
         if (PyUnicode_Check(event_name_obj)) {
             event_name = PyUnicode_AsUTF8(event_name_obj);
@@ -3644,12 +3642,12 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
             event_name = PyBytes_AS_STRING(event_name_obj);
         }
         if (event_name == NULL) {
+            Py_DECREF(event_name_obj);
             Py_DECREF(events_seq);
             PyErr_Format(PyExc_ValueError, "invalid events sequence");
             return NULL;
         }
 
-        Py_INCREF(event_name_obj);
         if (strcmp(event_name, "start") == 0) {
             Py_XSETREF(target->start_event_obj, event_name_obj);
         } else if (strcmp(event_name, "end") == 0) {

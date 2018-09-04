@@ -36,6 +36,7 @@ typedef PyTupleObject PyStructSequence;
 
 /* Macro, *only* to be used to fill in brand new objects */
 #define PyStructSequence_SET_ITEM(op, i, v) PyTuple_SET_ITEM(op, i, v)
+#define PyStructSequence_SetItemRef(op, i, v) PyTuple_SetItemRef(op, i, v)
 
 #define PyStructSequence_GET_ITEM(op, i) PyTuple_GET_ITEM(op, i)
 #endif

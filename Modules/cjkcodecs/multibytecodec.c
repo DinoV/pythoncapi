@@ -53,14 +53,16 @@ make_tuple(PyObject *object, Py_ssize_t len)
         Py_DECREF(object);
         return NULL;
     }
-    PyTuple_SET_ITEM(v, 0, object);
+    PyTuple_SetItemRef(v, 0, object);
+    Py_DECREF(object);
 
     w = PyLong_FromSsize_t(len);
     if (w == NULL) {
         Py_DECREF(v);
         return NULL;
     }
-    PyTuple_SET_ITEM(v, 1, w);
+    PyTuple_SetItemRef(v, 1, w);
+    Py_DECREF(w);
 
     return v;
 }
@@ -98,7 +100,8 @@ call_error_callback(PyObject *errors, PyObject *exc)
         return NULL;
     }
 
-    PyTuple_SET_ITEM(args, 0, exc);
+    PyTuple_SetItemRef(args, 0, exc);
+    Py_DECREF(exc);
     Py_INCREF(exc);
 
     r = PyObject_CallObject(cb, args);
@@ -200,7 +203,7 @@ multibytecodec_encerror(MultibyteCodec *codec,
                         MultibyteEncodeBuffer *buf,
                         PyObject *errors, Py_ssize_t e)
 {
-    PyObject *retobj = NULL, *retstr = NULL, *tobj;
+    PyObject *retobj = NULL, *retstr = NULL, *tobj, *arg;
     Py_ssize_t retstrsize, newpos;
     Py_ssize_t esize, start, end;
     const char *reason;
@@ -296,14 +299,25 @@ multibytecodec_encerror(MultibyteCodec *codec,
     if (retobj == NULL)
         goto errorexit;
 
-    if (!PyTuple_Check(retobj) || PyTuple_GET_SIZE(retobj) != 2 ||
-        (!PyUnicode_Check((tobj = PyTuple_GET_ITEM(retobj, 0))) && !PyBytes_Check(tobj)) ||
-        !PyLong_Check(PyTuple_GET_ITEM(retobj, 1))) {
+    int invalid = (!PyTuple_Check(retobj) || PyTuple_GET_SIZE(retobj) != 2);
+    if (!invalid) {
+        tobj = PyTuple_GetItemRef(retobj, 0);
+        arg = PyTuple_GetItemRef(retobj, 1);
+        invalid = ((!PyUnicode_Check(tobj) && !PyBytes_Check(tobj)) ||
+                   !PyLong_Check(arg));
+        if (invalid) {
+            Py_DECREF(tobj);
+            Py_DECREF(arg);
+        }
+    }
+    if (invalid) {
         PyErr_SetString(PyExc_TypeError,
                         "encoding error handler must return "
                         "(str, int) tuple");
         goto errorexit;
     }
+    Py_DECREF(tobj);
+    Py_DECREF(arg);
 
     if (PyUnicode_Check(tobj)) {
         Py_ssize_t inpos;
@@ -327,7 +341,9 @@ multibytecodec_encerror(MultibyteCodec *codec,
         buf->outbuf += retstrsize;
     }
 
-    newpos = PyLong_AsSsize_t(PyTuple_GET_ITEM(retobj, 1));
+    arg = PyTuple_GetItemRef(retobj, 1);
+    newpos = PyLong_AsSsize_t(arg);
+    Py_DECREF(arg);
     if (newpos < 0 && !PyErr_Occurred())
         newpos += (Py_ssize_t)buf->inlen;
     if (newpos < 0 || newpos > buf->inlen) {
@@ -355,7 +371,7 @@ multibytecodec_decerror(MultibyteCodec *codec,
                         MultibyteDecodeBuffer *buf,
                         PyObject *errors, Py_ssize_t e)
 {
-    PyObject *retobj = NULL, *retuni = NULL;
+    PyObject *retobj = NULL, *retuni = NULL, *arg;
     Py_ssize_t newpos;
     const char *reason;
     Py_ssize_t esize, start, end;
@@ -422,19 +438,31 @@ multibytecodec_decerror(MultibyteCodec *codec,
     if (retobj == NULL)
         goto errorexit;
 
-    if (!PyTuple_Check(retobj) || PyTuple_GET_SIZE(retobj) != 2 ||
-        !PyUnicode_Check((retuni = PyTuple_GET_ITEM(retobj, 0))) ||
-        !PyLong_Check(PyTuple_GET_ITEM(retobj, 1))) {
+    int invalid = (!PyTuple_Check(retobj) || PyTuple_GET_SIZE(retobj) != 2);
+    if (!invalid) {
+        retuni = PyTuple_GetItemRef(retobj, 0);
+        arg = PyTuple_GetItemRef(retobj, 1);
+        invalid = (!PyUnicode_Check(retuni) || !PyLong_Check(arg));
+        if (invalid) {
+            Py_DECREF(retuni);
+            Py_DECREF(arg);
+        }
+    }
+    if (invalid) {
         PyErr_SetString(PyExc_TypeError,
                         "decoding error handler must return "
                         "(str, int) tuple");
         goto errorexit;
     }
+    Py_DECREF(retuni);
+    Py_DECREF(arg);
 
     if (_PyUnicodeWriter_WriteStr(&buf->writer, retuni) < 0)
         goto errorexit;
 
-    newpos = PyLong_AsSsize_t(PyTuple_GET_ITEM(retobj, 1));
+    arg = PyTuple_GetItemRef(retobj, 1);
+    newpos = PyLong_AsSsize_t(arg);
+    Py_DECREF(arg);
     if (newpos < 0 && !PyErr_Occurred())
         newpos += (Py_ssize_t)(buf->inbuf_end - buf->inbuf_top);
     if (newpos < 0 || buf->inbuf_top + newpos > buf->inbuf_end) {

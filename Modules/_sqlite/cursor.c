@@ -330,10 +330,10 @@ PyObject* _pysqlite_fetch_one_row(pysqlite_Cursor* self)
         }
 
         if (converted) {
-            PyTuple_SetItem(row, i, converted);
+            PyTuple_SetItemRef(row, i, converted);
+            Py_DECREF(converted);
         } else {
-            Py_INCREF(Py_None);
-            PyTuple_SetItem(row, i, Py_None);
+            PyTuple_SetItemRef(row, i, Py_None);
         }
     }
 
@@ -468,8 +468,7 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
     if (!func_args) {
         goto error;
     }
-    Py_INCREF(operation);
-    if (PyTuple_SetItem(func_args, 0, operation) != 0) {
+    if (PyTuple_SetItemRef(func_args, 0, operation) != 0) {
         goto error;
     }
 
@@ -560,14 +559,17 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
                 if (!descriptor) {
                     goto error;
                 }
-                PyTuple_SetItem(descriptor, 0, _pysqlite_build_column_name(sqlite3_column_name(self->statement->st, i)));
-                Py_INCREF(Py_None); PyTuple_SetItem(descriptor, 1, Py_None);
-                Py_INCREF(Py_None); PyTuple_SetItem(descriptor, 2, Py_None);
-                Py_INCREF(Py_None); PyTuple_SetItem(descriptor, 3, Py_None);
-                Py_INCREF(Py_None); PyTuple_SetItem(descriptor, 4, Py_None);
-                Py_INCREF(Py_None); PyTuple_SetItem(descriptor, 5, Py_None);
-                Py_INCREF(Py_None); PyTuple_SetItem(descriptor, 6, Py_None);
-                PyTuple_SetItem(self->description, i, descriptor);
+                PyObject *name = _pysqlite_build_column_name(sqlite3_column_name(self->statement->st, i));
+                PyTuple_SetItemRef(descriptor, 0, name);
+                Py_DECREF(name);
+                PyTuple_SetItemRef(descriptor, 1, Py_None);
+                PyTuple_SetItemRef(descriptor, 2, Py_None);
+                PyTuple_SetItemRef(descriptor, 3, Py_None);
+                PyTuple_SetItemRef(descriptor, 4, Py_None);
+                PyTuple_SetItemRef(descriptor, 5, Py_None);
+                PyTuple_SetItemRef(descriptor, 6, Py_None);
+                PyTuple_SetItemRef(self->description, i, descriptor);
+                Py_DECREF(descriptor);
             }
         }
 

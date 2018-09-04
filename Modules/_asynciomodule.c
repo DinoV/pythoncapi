@@ -448,15 +448,19 @@ future_schedule_callbacks(FutureObj *fut)
 
     for (i = 0; i < len; i++) {
         PyObject *cb_tup = PyList_GET_ITEM(fut->fut_callbacks, i);
-        PyObject *cb = PyTuple_GET_ITEM(cb_tup, 0);
-        PyObject *ctx = PyTuple_GET_ITEM(cb_tup, 1);
+        PyObject *cb = PyTuple_GetItemRef(cb_tup, 0);
+        PyObject *ctx = PyTuple_GetItemRef(cb_tup, 1);
 
         if (call_soon(fut->fut_loop, cb, (PyObject *)fut, (PyContext *)ctx)) {
+            Py_DECREF(cb);
+            Py_DECREF(ctx);
             /* If an error occurs in pure-Python implementation,
                all callbacks are cleared. */
             Py_CLEAR(fut->fut_callbacks);
             return -1;
         }
+        Py_DECREF(cb);
+        Py_DECREF(ctx);
     }
 
     Py_CLEAR(fut->fut_callbacks);
@@ -666,10 +670,8 @@ future_add_done_callback(FutureObj *fut, PyObject *arg, PyContext *ctx)
             if (tup == NULL) {
                 return NULL;
             }
-            Py_INCREF(arg);
-            PyTuple_SET_ITEM(tup, 0, arg);
-            Py_INCREF(ctx);
-            PyTuple_SET_ITEM(tup, 1, (PyObject *)ctx);
+            PyTuple_SetItemRef(tup, 0, arg);
+            PyTuple_SetItemRef(tup, 1, (PyObject *)ctx);
 
             if (fut->fut_callbacks != NULL) {
                 int err = PyList_Append(fut->fut_callbacks, tup);
@@ -964,8 +966,9 @@ _asyncio_Future_remove_done_callback(FutureObj *self, PyObject *fn)
 
     if (len == 1) {
         PyObject *cb_tup = PyList_GET_ITEM(self->fut_callbacks, 0);
-        int cmp = PyObject_RichCompareBool(
-            fn, PyTuple_GET_ITEM(cb_tup, 0), Py_EQ);
+        PyObject *arg = PyTuple_GetItemRef(cb_tup, 0);
+        int cmp = PyObject_RichCompareBool(fn, arg, Py_EQ);
+        Py_DECREF(arg);
         if (cmp == -1) {
             return NULL;
         }
@@ -987,7 +990,9 @@ _asyncio_Future_remove_done_callback(FutureObj *self, PyObject *fn)
         int ret;
         PyObject *item = PyList_GET_ITEM(self->fut_callbacks, i);
         Py_INCREF(item);
-        ret = PyObject_RichCompareBool(fn, PyTuple_GET_ITEM(item, 0), Py_EQ);
+        PyObject *arg = PyTuple_GetItemRef(item, 0);
+        ret = PyObject_RichCompareBool(fn, arg, Py_EQ);
+        Py_DECREF(arg);
         if (ret == 0) {
             if (j < len) {
                 PyList_SET_ITEM(newlist, j, item);
@@ -1194,11 +1199,9 @@ FutureObj_get_callbacks(FutureObj *fut)
         return NULL;
     }
 
-    Py_INCREF(fut->fut_callback0);
-    PyTuple_SET_ITEM(tup0, 0, fut->fut_callback0);
+    PyTuple_SetItemRef(tup0, 0, fut->fut_callback0);
     assert(fut->fut_context0 != NULL);
-    Py_INCREF(fut->fut_context0);
-    PyTuple_SET_ITEM(tup0, 1, (PyObject *)fut->fut_context0);
+    PyTuple_SetItemRef(tup0, 1, (PyObject *)fut->fut_context0);
 
     PyList_SET_ITEM(new_list, 0, tup0);
 
@@ -3286,7 +3289,8 @@ module_init(void)
     if (context_str == NULL) {
         goto fail;
     }
-    PyTuple_SET_ITEM(context_kwname, 0, context_str);
+    PyTuple_SetItemRef(context_kwname, 0, context_str);
+    Py_DECREF(context_str);
 
 #define WITH_MOD(NAME) \
     Py_CLEAR(module); \

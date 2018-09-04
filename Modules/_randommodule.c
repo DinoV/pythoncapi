@@ -332,12 +332,14 @@ random_getstate(RandomObject *self, PyObject *Py_UNUSED(ignored))
         element = PyLong_FromUnsignedLong(self->state[i]);
         if (element == NULL)
             goto Fail;
-        PyTuple_SET_ITEM(state, i, element);
+        PyTuple_SetItemRef(state, i, element);
+        Py_DECREF(element);
     }
     element = PyLong_FromLong((long)(self->index));
     if (element == NULL)
         goto Fail;
-    PyTuple_SET_ITEM(state, i, element);
+    PyTuple_SetItemRef(state, i, element);
+    Py_DECREF(element);
     return state;
 
 Fail:
@@ -352,6 +354,7 @@ random_setstate(RandomObject *self, PyObject *state)
     unsigned long element;
     long index;
     uint32_t new_state[N];
+    PyObject *item;
 
     if (!PyTuple_Check(state)) {
         PyErr_SetString(PyExc_TypeError,
@@ -365,13 +368,17 @@ random_setstate(RandomObject *self, PyObject *state)
     }
 
     for (i=0; i<N ; i++) {
-        element = PyLong_AsUnsignedLong(PyTuple_GET_ITEM(state, i));
+        item = PyTuple_GetItemRef(state, i);
+        element = PyLong_AsUnsignedLong(item);
+        Py_DECREF(item);
         if (element == (unsigned long)-1 && PyErr_Occurred())
             return NULL;
         new_state[i] = (uint32_t)element;
     }
 
-    index = PyLong_AsLong(PyTuple_GET_ITEM(state, i));
+    item = PyTuple_GetItemRef(state, i);
+    index = PyLong_AsLong(item);
+    Py_DECREF(item);
     if (index == -1 && PyErr_Occurred())
         return NULL;
     if (index < 0 || index > N) {

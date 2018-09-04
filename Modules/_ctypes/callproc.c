@@ -1093,15 +1093,17 @@ PyObject *_ctypes_callproc(PPROC pProc,
         PyObject *arg;
         int err;
 
-        arg = PyTuple_GET_ITEM(argtuple, i);            /* borrowed ref */
+        arg = PyTuple_GetItemRef(argtuple, i);            /* borrowed ref */
+        Py_DECREF(arg);
         /* For cdecl functions, we allow more actual arguments
            than the length of the argtypes tuple.
            This is checked in _ctypes::PyCFuncPtr_Call
         */
         if (argtypes && argtype_count > i) {
             PyObject *v;
-            converter = PyTuple_GET_ITEM(argtypes, i);
+            converter = PyTuple_GetItemRef(argtypes, i);
             v = PyObject_CallFunctionObjArgs(converter, arg, NULL);
+            Py_DECREF(converter);
             if (v == NULL) {
                 _ctypes_extend_error(PyExc_ArgError, "argument %d: ", i+1);
                 goto cleanup;
@@ -1762,8 +1764,11 @@ buffer_info(PyObject *self, PyObject *arg)
     shape = PyTuple_New(dict->ndim);
     if (shape == NULL)
         return NULL;
-    for (i = 0; i < (int)dict->ndim; ++i)
-        PyTuple_SET_ITEM(shape, i, PyLong_FromSsize_t(dict->shape[i]));
+    for (i = 0; i < (int)dict->ndim; ++i) {
+        PyObject *arg = PyLong_FromSsize_t(dict->shape[i]);
+        PyTuple_SetItemRef(shape, i, arg);
+        Py_DECREF(arg);
+    }
 
     if (PyErr_Occurred()) {
         Py_DECREF(shape);

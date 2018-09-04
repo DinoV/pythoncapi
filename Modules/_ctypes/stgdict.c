@@ -217,15 +217,17 @@ MakeFields(PyObject *type, CFieldObject *descr,
         return -1;
 
     for (i = 0; i < PySequence_Fast_GET_SIZE(fieldlist); ++i) {
-        PyObject *pair = PySequence_Fast_GET_ITEM(fieldlist, i); /* borrowed */
         PyObject *fname, *ftype, *bits;
         CFieldObject *fdescr;
         CFieldObject *new_descr;
         /* Convert to PyArg_UnpackTuple... */
+        PyObject *pair = PySequence_Fast_GetItemRef(fieldlist, i);
         if (!PyArg_ParseTuple(pair, "OO|O", &fname, &ftype, &bits)) {
+            Py_DECREF(pair);
             Py_DECREF(fieldlist);
             return -1;
         }
+        Py_DECREF(pair);
         fdescr = (CFieldObject *)PyObject_GetAttr(descr->proto, fname);
         if (fdescr == NULL) {
             Py_DECREF(fieldlist);
@@ -296,8 +298,9 @@ MakeAnonFields(PyObject *type)
         return -1;
 
     for (i = 0; i < PySequence_Fast_GET_SIZE(anon_names); ++i) {
-        PyObject *fname = PySequence_Fast_GET_ITEM(anon_names, i); /* borrowed */
+        PyObject *fname = PySequence_Fast_GetItemRef(anon_names, i); /* borrowed */
         CFieldObject *descr = (CFieldObject *)PyObject_GetAttr(type, fname);
+        Py_DECREF(fname);
         if (descr == NULL) {
             Py_DECREF(anon_names);
             return -1;

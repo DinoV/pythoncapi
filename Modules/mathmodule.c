@@ -2139,20 +2139,24 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
         }
     }
     for (i=0 ; i<n ; i++) {
-        item = PyTuple_GET_ITEM(p, i);
+        item = PyTuple_GetItemRef(p, i);
         if (PyFloat_CheckExact(item)) {
             px = PyFloat_AS_DOUBLE(item);
+            Py_DECREF(item);
         } else {
             px = PyFloat_AsDouble(item);
+            Py_DECREF(item);
             if (px == -1.0 && PyErr_Occurred()) {
                 goto error_exit;
             }
         }
-        item = PyTuple_GET_ITEM(q, i);
+        item = PyTuple_GetItemRef(q, i);
         if (PyFloat_CheckExact(item)) {
             qx = PyFloat_AS_DOUBLE(item);
+            Py_DECREF(item);
         } else {
             qx = PyFloat_AsDouble(item);
+            Py_DECREF(item);
             if (qx == -1.0 && PyErr_Occurred()) {
                 goto error_exit;
             }
@@ -2196,11 +2200,13 @@ math_hypot(PyObject *self, PyObject *args)
             return NULL;
     }
     for (i=0 ; i<n ; i++) {
-        item = PyTuple_GET_ITEM(args, i);
+        item = PyTuple_GetItemRef(args, i);
         if (PyFloat_CheckExact(item)) {
             x = PyFloat_AS_DOUBLE(item);
+            Py_DECREF(item);
         } else {
             x = PyFloat_AsDouble(item);
+            Py_DECREF(item);
             if (x == -1.0 && PyErr_Occurred()) {
                 goto error_exit;
             }

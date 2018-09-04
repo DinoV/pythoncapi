@@ -114,7 +114,8 @@ _sanity_check_python_fd_sequence(PyObject *fd_sequence)
     Py_ssize_t seq_idx;
     long prev_fd = -1;
     for (seq_idx = 0; seq_idx < PyTuple_GET_SIZE(fd_sequence); ++seq_idx) {
-        PyObject* py_fd = PyTuple_GET_ITEM(fd_sequence, seq_idx);
+        PyObject* py_fd = PyTuple_GetItemRef(fd_sequence, seq_idx);
+        Py_DECREF(py_fd);
         long iter_fd;
         if (!PyLong_Check(py_fd)) {
             return 1;
@@ -141,7 +142,9 @@ _is_fd_in_sorted_fd_sequence(int fd, PyObject *fd_sequence)
         return 0;
     do {
         long middle = (search_min + search_max) / 2;
-        long middle_fd = PyLong_AsLong(PyTuple_GET_ITEM(fd_sequence, middle));
+        PyObject *fdobj = PyTuple_GetItemRef(fd_sequence, middle);
+        long middle_fd = PyLong_AsLong(fdobj);
+        Py_DECREF(fdobj);
         if (fd == middle_fd)
             return 1;
         if (fd > middle_fd)
@@ -159,8 +162,9 @@ make_inheritable(PyObject *py_fds_to_keep, int errpipe_write)
 
     len = PyTuple_GET_SIZE(py_fds_to_keep);
     for (i = 0; i < len; ++i) {
-        PyObject* fdobj = PyTuple_GET_ITEM(py_fds_to_keep, i);
+        PyObject* fdobj = PyTuple_GetItemRef(py_fds_to_keep, i);
         long fd = PyLong_AsLong(fdobj);
+        Py_DECREF(fdobj);
         assert(!PyErr_Occurred());
         assert(0 <= fd && fd <= INT_MAX);
         if (fd == errpipe_write) {
@@ -222,8 +226,9 @@ _close_fds_by_brute_force(long start_fd, PyObject *py_fds_to_keep)
     /* As py_fds_to_keep is sorted we can loop through the list closing
      * fds in between any in the keep list falling within our range. */
     for (keep_seq_idx = 0; keep_seq_idx < num_fds_to_keep; ++keep_seq_idx) {
-        PyObject* py_keep_fd = PyTuple_GET_ITEM(py_fds_to_keep, keep_seq_idx);
+        PyObject* py_keep_fd = PyTuple_GetItemRef(py_fds_to_keep, keep_seq_idx);
         int keep_fd = PyLong_AsLong(py_keep_fd);
+        Py_DECREF(py_keep_fd);
         if (keep_fd < start_fd)
             continue;
         for (fd_num = start_fd; fd_num < keep_fd; ++fd_num) {
@@ -632,10 +637,14 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
                 PyErr_SetString(PyExc_RuntimeError, "args changed during iteration");
                 goto cleanup;
             }
-            borrowed_arg = PySequence_Fast_GET_ITEM(fast_args, arg_num);
-            if (PyUnicode_FSConverter(borrowed_arg, &converted_arg) == 0)
+            PyObject *arg = PySequence_Fast_GetItemRef(fast_args, arg_num);
+            if (PyUnicode_FSConverter(arg, &converted_arg) == 0) {
+                Py_DECREF(arg);
                 goto cleanup;
-            PyTuple_SET_ITEM(converted_args, arg_num, converted_arg);
+            }
+            Py_DECREF(arg);
+            PyTuple_SetItemRef(converted_args, arg_num, converted_arg);
+            Py_DECREF(converted_arg);
         }
 
         argv = _PySequence_BytesToCharpArray(converted_args);

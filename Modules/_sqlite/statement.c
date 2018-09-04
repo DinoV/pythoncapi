@@ -235,8 +235,7 @@ void pysqlite_statement_bind_parameters(pysqlite_Statement* self, PyObject* para
         }
         for (i = 0; i < num_params; i++) {
             if (PyTuple_CheckExact(parameters)) {
-                current_param = PyTuple_GET_ITEM(parameters, i);
-                Py_XINCREF(current_param);
+                current_param = PyTuple_GetItemRef(parameters, i);
             } else if (PyList_CheckExact(parameters)) {
                 current_param = PyList_GET_ITEM(parameters, i);
                 Py_XINCREF(current_param);

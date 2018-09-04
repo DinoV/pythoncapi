@@ -230,6 +230,15 @@ PyList_GetItem(PyObject *op, Py_ssize_t i)
     return ((PyListObject *)op) -> ob_item[i];
 }
 
+PyObject *
+PyList_GetItemRef(PyObject *op, Py_ssize_t i)
+{
+    PyObject *item = PyList_GetItem(op, i);
+    Py_XINCREF(item);
+    return item;
+}
+
+
 int
 PyList_SetItem(PyObject *op, Py_ssize_t i,
                PyObject *newitem)

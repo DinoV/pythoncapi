@@ -4,6 +4,7 @@ TODO list for new Python C API
 * capi_tests: check for reference leaks
 * Modify PyObject_INIT(op, type) macro to return op again? use an inlined
   function?
+* Do we need ``PySequence_Fast_GetItemRef()``?
 
 Issues
 ======

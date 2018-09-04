@@ -98,6 +98,9 @@ resource_getrusage_impl(PyObject *module, int who)
     if (!result)
         return NULL;
 
+#define PyStructSequence_SET_ITEM(result, i, val) \
+    do { PyStructSequence_SetItemRef(result, i, val); Py_XDECREF(val); } while (0)
+
     PyStructSequence_SET_ITEM(result, 0,
                     PyFloat_FromDouble(doubletime(ru.ru_utime)));
     PyStructSequence_SET_ITEM(result, 1,
@@ -117,6 +120,8 @@ resource_getrusage_impl(PyObject *module, int who)
     PyStructSequence_SET_ITEM(result, 14, PyLong_FromLong(ru.ru_nvcsw));
     PyStructSequence_SET_ITEM(result, 15, PyLong_FromLong(ru.ru_nivcsw));
 
+#undef PyStructSequence_SET_ITEM
+
     if (PyErr_Occurred()) {
         Py_DECREF(result);
         return NULL;
@@ -128,7 +133,7 @@ resource_getrusage_impl(PyObject *module, int who)
 static int
 py2rlimit(PyObject *limits, struct rlimit *rl_out)
 {
-    PyObject *curobj, *maxobj;
+    PyObject *curobj = NULL, *maxobj = NULL;
     limits = PySequence_Tuple(limits);
     if (!limits)
         /* Here limits is a borrowed reference */
@@ -139,8 +144,8 @@ py2rlimit(PyObject *limits, struct rlimit *rl_out)
                         "expected a tuple of 2 integers");
         goto error;
     }
-    curobj = PyTuple_GET_ITEM(limits, 0);
-    maxobj = PyTuple_GET_ITEM(limits, 1);
+    curobj = PyTuple_GetItemRef(limits, 0);
+    maxobj = PyTuple_GetItemRef(limits, 1);
 #if !defined(HAVE_LARGEFILE_SUPPORT)
     rl_out->rlim_cur = PyLong_AsLong(curobj);
     if (rl_out->rlim_cur == (rlim_t)-1 && PyErr_Occurred())
@@ -158,12 +163,16 @@ py2rlimit(PyObject *limits, struct rlimit *rl_out)
         goto error;
 #endif
 
+    Py_DECREF(curobj);
+    Py_DECREF(maxobj);
     Py_DECREF(limits);
     rl_out->rlim_cur = rl_out->rlim_cur & RLIM_INFINITY;
     rl_out->rlim_max = rl_out->rlim_max & RLIM_INFINITY;
     return 0;
 
 error:
+    Py_XDECREF(curobj);
+    Py_XDECREF(maxobj);
     Py_DECREF(limits);
     return -1;
 }

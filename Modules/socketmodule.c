@@ -3841,11 +3841,15 @@ sock_recvmsg_into(PySocketSockObject *s, PyObject *args)
         goto finally;
     }
     for (; nbufs < nitems; nbufs++) {
-        if (!PyArg_Parse(PySequence_Fast_GET_ITEM(fast, nbufs),
+        PyObject *arg = PySequence_Fast_GetItemRef(fast, nbufs);
+        if (!PyArg_Parse(arg,
                          "w*;recvmsg_into() argument 1 must be an iterable "
                          "of single-segment read-write buffers",
-                         &bufs[nbufs]))
+                         &bufs[nbufs])) {
+            Py_DECREF(arg);
             goto finally;
+        }
+        Py_DECREF(arg);
         iovs[nbufs].iov_base = bufs[nbufs].buf;
         iovs[nbufs].iov_len = bufs[nbufs].len;
     }
@@ -4173,11 +4177,15 @@ sock_sendmsg_iovec(PySocketSockObject *s, PyObject *data_arg,
         }
     }
     for (; ndatabufs < ndataparts; ndatabufs++) {
-        if (!PyArg_Parse(PySequence_Fast_GET_ITEM(data_fast, ndatabufs),
+        PyObject *arg = PySequence_Fast_GetItemRef(data_fast, ndatabufs);
+        if (!PyArg_Parse(arg,
                          "y*;sendmsg() argument 1 must be an iterable of "
                          "bytes-like objects",
-                         &databufs[ndatabufs]))
+                         &databufs[ndatabufs])) {
+            Py_DECREF(arg);
             goto finally;
+        }
+        Py_DECREF(arg);
         iovs[ndatabufs].iov_base = databufs[ndatabufs].buf;
         iovs[ndatabufs].iov_len = databufs[ndatabufs].len;
     }
@@ -4268,12 +4276,16 @@ sock_sendmsg(PySocketSockObject *s, PyObject *args)
     while (ncmsgbufs < ncmsgs) {
         size_t bufsize, space;
 
-        if (!PyArg_Parse(PySequence_Fast_GET_ITEM(cmsg_fast, ncmsgbufs),
+        PyObject *arg = PySequence_Fast_GetItemRef(cmsg_fast, ncmsgbufs);
+        if (!PyArg_Parse(arg,
                          "(iiy*):[sendmsg() ancillary data items]",
                          &cmsgs[ncmsgbufs].level,
                          &cmsgs[ncmsgbufs].type,
-                         &cmsgs[ncmsgbufs].data))
+                         &cmsgs[ncmsgbufs].data)) {
+            Py_DECREF(arg);
             goto finally;
+        }
+        Py_DECREF(arg);
         bufsize = cmsgs[ncmsgbufs++].data.len;
 
 #ifdef CMSG_SPACE

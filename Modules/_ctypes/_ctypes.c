@@ -962,17 +962,20 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *proto;
     PyObject *typedict;
 
-    typedict = PyTuple_GetItem(args, 2);
-    if (!typedict)
+    typedict = PyTuple_GetItemRef(args, 2);
+    if (!typedict) {
         return NULL;
+    }
 /*
   stgdict items size, align, length contain info about pointers itself,
   stgdict->proto has info about the pointed to type!
 */
     stgdict = (StgDictObject *)PyObject_CallObject(
         (PyObject *)&PyCStgDict_Type, NULL);
-    if (!stgdict)
+    if (!stgdict) {
+        Py_DECREF(typedict);
         return NULL;
+    }
     stgdict->size = sizeof(void *);
     stgdict->align = _ctypes_get_fielddesc("P")->pffi_type->alignment;
     stgdict->length = 1;
@@ -981,6 +984,7 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     stgdict->flags |= TYPEFLAG_ISPOINTER;
 
     proto = PyDict_GetItemString(typedict, "_type_"); /* Borrowed ref */
+    Py_DECREF(typedict);
     if (proto && -1 == PyCPointerType_SetProto(stgdict, proto)) {
         Py_DECREF((PyObject *)stgdict);
         return NULL;
@@ -1835,7 +1839,6 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
 {
     PyTypeObject *result;
     StgDictObject *stgdict;
-    PyObject *name = PyTuple_GET_ITEM(args, 0);
     PyObject *newname;
     PyObject *swapped_args;
     static PyObject *suffix;
@@ -1852,17 +1855,20 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
         suffix = PyUnicode_InternFromString("_be");
 #endif
 
+    PyObject *name = PyTuple_GetItemRef(args, 0);
     newname = PyUnicode_Concat(name, suffix);
+    Py_DECREF(name);
     if (newname == NULL) {
         Py_DECREF(swapped_args);
         return NULL;
     }
 
-    PyTuple_SET_ITEM(swapped_args, 0, newname);
+    PyTuple_SetItemRef(swapped_args, 0, newname);
+    Py_DECREF(newname);
     for (i=1; i<PyTuple_GET_SIZE(args); ++i) {
-        PyObject *v = PyTuple_GET_ITEM(args, i);
-        Py_INCREF(v);
-        PyTuple_SET_ITEM(swapped_args, i, v);
+        PyObject *v = PyTuple_GetItemRef(args, i);
+        PyTuple_SetItemRef(swapped_args, i, v);
+        Py_DECREF(v);
     }
 
     /* create the new instance (which is a class,
@@ -2255,11 +2261,13 @@ converters_from_argtypes(PyObject *ob)
     */
 
     for (i = 0; i < nArgs; ++i) {
-        PyObject *tp = PyTuple_GET_ITEM(ob, i);
+        PyObject *tp = PyTuple_GetItemRef(ob, i);
         PyObject *cnv = PyObject_GetAttrString(tp, "from_param");
+        Py_DECREF(tp);
         if (!cnv)
             goto argtypes_error_1;
-        PyTuple_SET_ITEM(converters, i, cnv);
+        PyTuple_SetItemRef(converters, i, cnv);
+        Py_DECREF(cnv);
     }
     Py_DECREF(ob);
     return converters;
@@ -3261,7 +3269,8 @@ _validate_paramflags(PyTypeObject *type, PyObject *paramflags)
     }
 
     for (i = 0; i < len; ++i) {
-        PyObject *item = PyTuple_GET_ITEM(paramflags, i);
+        PyObject *item = PyTuple_GetItemRef(paramflags, i);
+        Py_DECREF(item);
         int flag;
         char *name;
         PyObject *defval;
@@ -3271,7 +3280,8 @@ _validate_paramflags(PyTypeObject *type, PyObject *paramflags)
                    "paramflags must be a sequence of (int [,string [,value]]) tuples");
             return 0;
         }
-        typ = PyTuple_GET_ITEM(argtypes, i);
+        typ = PyTuple_GetItemRef(argtypes, i);
+        Py_DECREF(typ);
         switch (flag & (PARAMFLAG_FIN | PARAMFLAG_FOUT | PARAMFLAG_FLCID)) {
         case 0:
         case PARAMFLAG_FIN:
@@ -3470,29 +3480,48 @@ PyCFuncPtr_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *callable;
     StgDictObject *dict;
     CThunkObject *thunk;
+    PyObject *arg;
 
     if (PyTuple_GET_SIZE(args) == 0)
         return GenericPyCData_new(type, args, kwds);
 
-    if (1 <= PyTuple_GET_SIZE(args) && PyTuple_Check(PyTuple_GET_ITEM(args, 0)))
-        return PyCFuncPtr_FromDll(type, args, kwds);
+    if (1 <= PyTuple_GET_SIZE(args)) {
+        arg = PyTuple_GetItemRef(args, 0);
+        if (PyTuple_Check(arg)) {
+            Py_DECREF(arg);
+            return PyCFuncPtr_FromDll(type, args, kwds);
+        }
+        Py_DECREF(arg);
+    }
 
 #ifdef MS_WIN32
-    if (2 <= PyTuple_GET_SIZE(args) && PyLong_Check(PyTuple_GET_ITEM(args, 0)))
-        return PyCFuncPtr_FromVtblIndex(type, args, kwds);
+    if (2 <= PyTuple_GET_SIZE(args)) {
+        arg = PyTuple_GetItemRef(args, 0);
+        if (PyLong_Check(arg)) {
+            Py_DECREF(arg);
+            return PyCFuncPtr_FromVtblIndex(type, args, kwds);
+        }
+        Py_DECREF(arg);
+    }
 #endif
 
-    if (1 == PyTuple_GET_SIZE(args)
-        && (PyLong_Check(PyTuple_GET_ITEM(args, 0)))) {
-        CDataObject *ob;
-        void *ptr = PyLong_AsVoidPtr(PyTuple_GET_ITEM(args, 0));
-        if (ptr == NULL && PyErr_Occurred())
-            return NULL;
-        ob = (CDataObject *)GenericPyCData_new(type, args, kwds);
-        if (ob == NULL)
-            return NULL;
-        *(void **)ob->b_ptr = ptr;
-        return (PyObject *)ob;
+    if (1 == PyTuple_GET_SIZE(args)) {
+        arg = PyTuple_GetItemRef(args, 0);
+        if (PyLong_Check(arg)) {
+            Py_DECREF(arg);
+            CDataObject *ob;
+            PyObject *arg = PyTuple_GetItemRef(args, 0);
+            void *ptr = PyLong_AsVoidPtr(arg);
+            Py_DECREF(arg);
+            if (ptr == NULL && PyErr_Occurred())
+                return NULL;
+            ob = (CDataObject *)GenericPyCData_new(type, args, kwds);
+            if (ob == NULL)
+                return NULL;
+            *(void **)ob->b_ptr = ptr;
+            return (PyObject *)ob;
+        }
+        Py_DECREF(arg);
     }
 
     if (!PyArg_ParseTuple(args, "O", &callable))
@@ -3585,9 +3614,8 @@ _get_arg(int *pindex, PyObject *name, PyObject *defval, PyObject *inargs, PyObje
     PyObject *v;
 
     if (*pindex < PyTuple_GET_SIZE(inargs)) {
-        v = PyTuple_GET_ITEM(inargs, *pindex);
+        v = PyTuple_GetItemRef(inargs, *pindex);
         ++*pindex;
-        Py_INCREF(v);
         return v;
     }
     if (kwds && name && (v = PyDict_GetItem(kwds, name))) {
@@ -3668,7 +3696,8 @@ _build_callargs(PyCFuncPtrObject *self, PyObject *argtypes,
     }
 #endif
     for (i = 0; i < len; ++i) {
-        PyObject *item = PyTuple_GET_ITEM(paramflags, i);
+        PyObject *item = PyTuple_GetItemRef(paramflags, i);
+        Py_DECREF(item);
         PyObject *ob;
         int flag;
         PyObject *name = NULL;
@@ -3678,9 +3707,19 @@ _build_callargs(PyCFuncPtrObject *self, PyObject *argtypes,
            calls below. */
         /* We HAVE already checked that the tuple can be parsed with "i|ZO", so... */
         Py_ssize_t tsize = PyTuple_GET_SIZE(item);
-        flag = PyLong_AS_LONG(PyTuple_GET_ITEM(item, 0));
-        name = tsize > 1 ? PyTuple_GET_ITEM(item, 1) : NULL;
-        defval = tsize > 2 ? PyTuple_GET_ITEM(item, 2) : NULL;
+        PyObject *item0 = PyTuple_GetItemRef(item, 0);
+        flag = PyLong_AS_LONG(item0);
+        Py_DECREF(item0);
+        name = NULL;
+        defval = NULL;
+        if (tsize > 1) {
+            name = PyTuple_GetItemRef(item, 1);
+            Py_DECREF(name);
+        }
+        if (tsize > 2) {
+            defval = PyTuple_GetItemRef(item, 2);
+            Py_DECREF(defval);
+        }
 
         switch (flag & (PARAMFLAG_FIN | PARAMFLAG_FOUT | PARAMFLAG_FLCID)) {
         case PARAMFLAG_FIN | PARAMFLAG_FLCID:
@@ -3689,7 +3728,8 @@ _build_callargs(PyCFuncPtrObject *self, PyObject *argtypes,
             if (defval == NULL)
                 defval = _PyLong_Zero;
             Py_INCREF(defval);
-            PyTuple_SET_ITEM(callargs, i, defval);
+            PyTuple_SetItemRef(callargs, i, defval);
+            Py_DECREF(defval);
             break;
         case (PARAMFLAG_FIN | PARAMFLAG_FOUT):
             *pinoutmask |= (1 << i); /* mark as inout arg */
@@ -3701,7 +3741,8 @@ _build_callargs(PyCFuncPtrObject *self, PyObject *argtypes,
             ob =_get_arg(&inargs_index, name, defval, inargs, kwds);
             if (ob == NULL)
                 goto error;
-            PyTuple_SET_ITEM(callargs, i, ob);
+            PyTuple_SetItemRef(callargs, i, ob);
+            Py_DECREF(ob);
             break;
         case PARAMFLAG_FOUT:
             /* XXX Refactor this code into a separate function. */
@@ -3715,14 +3756,14 @@ _build_callargs(PyCFuncPtrObject *self, PyObject *argtypes,
                 /* XXX Using mutable objects as defval will
                    make the function non-threadsafe, unless we
                    copy the object in each invocation */
-                Py_INCREF(defval);
-                PyTuple_SET_ITEM(callargs, i, defval);
+                PyTuple_SetItemRef(callargs, i, defval);
                 *poutmask |= (1 << i); /* mark as out arg */
                 (*pnumretvals)++;
                 break;
             }
-            ob = PyTuple_GET_ITEM(argtypes, i);
+            ob = PyTuple_GetItemRef(argtypes, i);
             dict = PyType_stgdict(ob);
+            Py_DECREF(ob);
             if (dict == NULL) {
                 /* Cannot happen: _validate_paramflags()
                   would not accept such an object */
@@ -3752,7 +3793,8 @@ _build_callargs(PyCFuncPtrObject *self, PyObject *argtypes,
                 goto error;
             /* The .from_param call that will occur later will pass this
                as a byref parameter. */
-            PyTuple_SET_ITEM(callargs, i, ob);
+            PyTuple_SetItemRef(callargs, i, ob);
+            Py_DECREF(ob);
             *poutmask |= (1 << i); /* mark as out arg */
             (*pnumretvals)++;
             break;
@@ -3826,24 +3868,26 @@ _build_result(PyObject *result, PyObject *callargs,
     for (bit = 1, i = 0; i < 32; ++i, bit <<= 1) {
         PyObject *v;
         if (bit & inoutmask) {
-            v = PyTuple_GET_ITEM(callargs, i);
-            Py_INCREF(v);
+            v = PyTuple_GetItemRef(callargs, i);
             if (numretvals == 1) {
                 Py_DECREF(callargs);
                 return v;
             }
-            PyTuple_SET_ITEM(tup, index, v);
+            PyTuple_SetItemRef(tup, index, v);
+            Py_DECREF(v);
             index++;
         } else if (bit & outmask) {
             _Py_IDENTIFIER(__ctypes_from_outparam__);
 
-            v = PyTuple_GET_ITEM(callargs, i);
+            v = PyTuple_GetItemRef(callargs, i);
+            Py_DECREF(v);
             v = _PyObject_CallMethodId(v, &PyId___ctypes_from_outparam__, NULL);
             if (v == NULL || numretvals == 1) {
                 Py_DECREF(callargs);
                 return v;
             }
-            PyTuple_SET_ITEM(tup, index, v);
+            PyTuple_SetItemRef(tup, index, v);
+            Py_DECREF(v);
             index++;
         }
         if (index == numretvals)
@@ -4148,7 +4192,8 @@ _init_pos_args(PyObject *self, PyTypeObject *type,
             Py_DECREF(pair);
             return -1;
         }
-        val = PyTuple_GET_ITEM(args, i + index);
+        val = PyTuple_GetItemRef(args, i + index);
+        Py_DECREF(val);
         if (kwds && PyDict_GetItem(kwds, name)) {
             PyErr_Format(PyExc_TypeError,
                          "duplicate values for field %R",
@@ -4304,9 +4349,12 @@ Array_init(CDataObject *self, PyObject *args, PyObject *kw)
     n = PyTuple_GET_SIZE(args);
     for (i = 0; i < n; ++i) {
         PyObject *v;
-        v = PyTuple_GET_ITEM(args, i);
-        if (-1 == PySequence_SetItem((PyObject *)self, i, v))
+        v = PyTuple_GetItemRef(args, i);
+        if (-1 == PySequence_SetItem((PyObject *)self, i, v)) {
+            Py_DECREF(v);
             return -1;
+        }
+        Py_DECREF(v);
     }
     return 0;
 }

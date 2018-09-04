@@ -444,7 +444,8 @@ Split(const char *list)
                 v = NULL;
                 break;
             }
-            PyTuple_SET_ITEM(v, i, w);
+            PyTuple_SetItemRef(v, i, w);
+            Py_DECREF(w);
         }
     }
     Tcl_Free(FREECAST argv);
@@ -468,8 +469,9 @@ SplitObj(PyObject *arg)
            If this does not return a new object, no action is
            needed. */
         for(i = 0; i < size; i++) {
-            elem = PyTuple_GET_ITEM(arg, i);
+            elem = PyTuple_GetItemRef(arg, i);
             newelem = SplitObj(elem);
+            Py_DECREF(elem);
             if (!newelem) {
                 Py_XDECREF(result);
                 return NULL;
@@ -484,12 +486,13 @@ SplitObj(PyObject *arg)
                 if (!result)
                     return NULL;
                 for(k = 0; k < i; k++) {
-                    elem = PyTuple_GET_ITEM(arg, k);
-                    Py_INCREF(elem);
-                    PyTuple_SET_ITEM(result, k, elem);
+                    elem = PyTuple_GetItemRef(arg, k);
+                    PyTuple_SetItemRef(result, k, elem);
+                    Py_DECREF(elem);
                 }
             }
-            PyTuple_SET_ITEM(result, i, newelem);
+            PyTuple_SetItemRef(result, i, newelem);
+            Py_DECREF(newelem);
         }
         if (result)
             return result;
@@ -511,7 +514,8 @@ SplitObj(PyObject *arg)
                 Py_XDECREF(result);
                 return NULL;
             }
-            PyTuple_SET_ITEM(result, i, newelem);
+            PyTuple_SetItemRef(result, i, newelem);
+            Py_DECREF(newelem);
         }
         return result;
     }
@@ -1042,8 +1046,11 @@ AsObj(PyObject *value)
           PyErr_NoMemory();
           return NULL;
         }
-        for (i = 0; i < size; i++)
-          argv[i] = AsObj(PySequence_Fast_GET_ITEM(value,i));
+        for (i = 0; i < size; i++) {
+            PyObject *arg = PySequence_Fast_GetItemRef(value,i);
+            argv[i] = AsObj(arg);
+            Py_DECREF(arg);
+        }
         result = Tcl_NewListObj((int)size, argv);
         PyMem_Free(argv);
         return result;
@@ -1252,7 +1259,8 @@ FromObj(PyObject* tkapp, Tcl_Obj *value)
                 Py_DECREF(result);
                 return NULL;
             }
-            PyTuple_SET_ITEM(result, i, elem);
+            PyTuple_SetItemRef(result, i, elem);
+            Py_DECREF(elem);
         }
         return result;
     }
@@ -1348,12 +1356,14 @@ Tkapp_CallArgs(PyObject *args, Tcl_Obj** objStore, int *pobjc)
         }
 
         for (i = 0; i < objc; i++) {
-            PyObject *v = PySequence_Fast_GET_ITEM(args, i);
+            PyObject *v = PySequence_Fast_GetItemRef(args, i);
             if (v == Py_None) {
+                Py_DECREF(v);
                 objc = i;
                 break;
             }
             objv[i] = AsObj(v);
+            Py_DECREF(v);
             if (!objv[i]) {
                 /* Reset objc, so it attempts to clear
                    objects only up to i. */
@@ -1460,7 +1470,8 @@ Tkapp_Call(PyObject *selfptr, PyObject *args)
 
     /* If args is a single tuple, replace with contents of tuple */
     if (PyTuple_GET_SIZE(args) == 1) {
-        PyObject *item = PyTuple_GET_ITEM(args, 0);
+        PyObject *item = PyTuple_GetItemRef(args, 0);
+        Py_DECREF(item);
         if (PyTuple_Check(item))
             args = item;
     }
@@ -2212,7 +2223,8 @@ _tkinter_tkapp_splitlist(TkappObject *self, PyObject *arg)
                 Py_DECREF(v);
                 return NULL;
             }
-            PyTuple_SET_ITEM(v, i, s);
+            PyTuple_SetItemRef(v, i, s);
+            Py_DECREF(s);
         }
         return v;
     }
@@ -2248,7 +2260,8 @@ _tkinter_tkapp_splitlist(TkappObject *self, PyObject *arg)
             v = NULL;
             goto finally;
         }
-        PyTuple_SET_ITEM(v, i, s);
+        PyTuple_SetItemRef(v, i, s);
+        Py_DECREF(s);
     }
 
   finally:
@@ -2293,7 +2306,8 @@ _tkinter_tkapp_split(TkappObject *self, PyObject *arg)
                 Py_DECREF(v);
                 return NULL;
             }
-            PyTuple_SET_ITEM(v, i, s);
+            PyTuple_SetItemRef(v, i, s);
+            Py_DECREF(s);
         }
         return v;
     }
@@ -2359,7 +2373,8 @@ PythonCmd(ClientData clientData, Tcl_Interp *interp, int argc, const char *argv[
             Py_DECREF(arg);
             return PythonCmd_Error(interp);
         }
-        PyTuple_SET_ITEM(arg, i, s);
+        PyTuple_SetItemRef(arg, i, s);
+        Py_DECREF(s);
     }
     res = PyObject_Call(func, arg, NULL);
     Py_DECREF(arg);
@@ -3068,7 +3083,8 @@ _flatten1(FlattenContext* context, PyObject* item, int depth)
             return 0;
         /* copy items to output tuple */
         for (i = 0; i < size; i++) {
-            PyObject *o = PySequence_Fast_GET_ITEM(item, i);
+            PyObject *o = PySequence_Fast_GetItemRef(item, i);
+            Py_DECREF(o);
             if (PyList_Check(o) || PyTuple_Check(o)) {
                 if (!_flatten1(context, o, depth + 1))
                     return 0;
@@ -3077,8 +3093,9 @@ _flatten1(FlattenContext* context, PyObject* item, int depth)
                     !_bump(context, 1))
                     return 0;
                 Py_INCREF(o);
-                PyTuple_SET_ITEM(context->tuple,
-                                 context->size++, o);
+                PyTuple_SetItemRef(context->tuple,
+                                   context->size++, o);
+                Py_DECREF(o);
             }
         }
     } else {

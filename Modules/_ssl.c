@@ -1266,14 +1266,16 @@ _get_peer_alt_names (X509 *certificate) {
                     Py_DECREF(t);
                     goto fail;
                 }
-                PyTuple_SET_ITEM(t, 0, v);
+                PyTuple_SetItemRef(t, 0, v);
+                Py_DECREF(v);
 
                 v = _create_tuple_for_X509_NAME (name->d.dirn);
                 if (v == NULL) {
                     Py_DECREF(t);
                     goto fail;
                 }
-                PyTuple_SET_ITEM(t, 1, v);
+                PyTuple_SetItemRef(t, 1, v);
+                Py_DECREF(v);
                 break;
 
             case GEN_EMAIL:
@@ -1302,14 +1304,16 @@ _get_peer_alt_names (X509 *certificate) {
                     Py_DECREF(t);
                     goto fail;
                 }
-                PyTuple_SET_ITEM(t, 0, v);
+                PyTuple_SetItemRef(t, 0, v);
+                Py_DECREF(v);
                 v = PyUnicode_FromStringAndSize((char *)ASN1_STRING_data(as),
                                                 ASN1_STRING_length(as));
                 if (v == NULL) {
                     Py_DECREF(t);
                     goto fail;
                 }
-                PyTuple_SET_ITEM(t, 1, v);
+                PyTuple_SetItemRef(t, 1, v);
+                Py_DECREF(v);
                 break;
 
             case GEN_RID:
@@ -1322,7 +1326,8 @@ _get_peer_alt_names (X509 *certificate) {
                     Py_DECREF(t);
                     goto fail;
                 }
-                PyTuple_SET_ITEM(t, 0, v);
+                PyTuple_SetItemRef(t, 0, v);
+                Py_DECREF(v);
 
                 len = i2t_ASN1_OBJECT(buf, sizeof(buf)-1, name->d.rid);
                 if (len < 0) {
@@ -1338,7 +1343,8 @@ _get_peer_alt_names (X509 *certificate) {
                     Py_DECREF(t);
                     goto fail;
                 }
-                PyTuple_SET_ITEM(t, 1, v);
+                PyTuple_SetItemRef(t, 1, v);
+                Py_DECREF(v);
                 break;
 
             default:
@@ -1381,14 +1387,16 @@ _get_peer_alt_names (X509 *certificate) {
                     Py_DECREF(t);
                     goto fail;
                 }
-                PyTuple_SET_ITEM(t, 0, v);
+                PyTuple_SetItemRef(t, 0, v);
+                Py_DECREF(v);
                 v = PyUnicode_FromStringAndSize((vptr + 1),
                                                 (len - (vptr - buf + 1)));
                 if (v == NULL) {
                     Py_DECREF(t);
                     goto fail;
                 }
-                PyTuple_SET_ITEM(t, 1, v);
+                PyTuple_SetItemRef(t, 1, v);
+                Py_DECREF(v);
                 break;
             }
 
@@ -1819,30 +1827,31 @@ cipher_to_tuple(const SSL_CIPHER *cipher)
 
     cipher_name = SSL_CIPHER_get_name(cipher);
     if (cipher_name == NULL) {
-        Py_INCREF(Py_None);
-        PyTuple_SET_ITEM(retval, 0, Py_None);
+        PyTuple_SetItemRef(retval, 0, Py_None);
     } else {
         v = PyUnicode_FromString(cipher_name);
         if (v == NULL)
             goto fail;
-        PyTuple_SET_ITEM(retval, 0, v);
+        PyTuple_SetItemRef(retval, 0, v);
+        Py_DECREF(v);
     }
 
     cipher_protocol = SSL_CIPHER_get_version(cipher);
     if (cipher_protocol == NULL) {
-        Py_INCREF(Py_None);
-        PyTuple_SET_ITEM(retval, 1, Py_None);
+        PyTuple_SetItemRef(retval, 1, Py_None);
     } else {
         v = PyUnicode_FromString(cipher_protocol);
         if (v == NULL)
             goto fail;
-        PyTuple_SET_ITEM(retval, 1, v);
+        PyTuple_SetItemRef(retval, 1, v);
+        Py_DECREF(v);
     }
 
     v = PyLong_FromLong(SSL_CIPHER_get_bits(cipher, NULL));
     if (v == NULL)
         goto fail;
-    PyTuple_SET_ITEM(retval, 2, v);
+    PyTuple_SetItemRef(retval, 2, v);
+    Py_DECREF(v);
 
     return retval;
 
@@ -5339,12 +5348,12 @@ _ssl_enum_certificates_impl(PyObject *module, const char *store_name)
             Py_CLEAR(result);
             break;
         }
-        PyTuple_SET_ITEM(tup, 0, cert);
-        cert = NULL;
-        PyTuple_SET_ITEM(tup, 1, enc);
-        enc = NULL;
-        PyTuple_SET_ITEM(tup, 2, keyusage);
-        keyusage = NULL;
+        PyTuple_SetItemRef(tup, 0, cert);
+        Py_CLEAR(cert);
+        PyTuple_SetItemRef(tup, 1, enc);
+        Py_CLEAR(enc);
+        PyTuple_SetItemRef(tup, 2, keyusage);
+        Py_CLEAR(keyusage);
         if (PyList_Append(result, tup) < 0) {
             Py_CLEAR(result);
             break;
@@ -5418,10 +5427,10 @@ _ssl_enum_crls_impl(PyObject *module, const char *store_name)
             Py_CLEAR(result);
             break;
         }
-        PyTuple_SET_ITEM(tup, 0, crl);
-        crl = NULL;
-        PyTuple_SET_ITEM(tup, 1, enc);
-        enc = NULL;
+        PyTuple_SetItemRef(tup, 0, crl);
+        Py_CLEAR(crl;
+        PyTuple_SetItemRef(tup, 1, enc);
+        Py_CLEAR(enc);
 
         if (PyList_Append(result, tup) < 0) {
             Py_CLEAR(result);

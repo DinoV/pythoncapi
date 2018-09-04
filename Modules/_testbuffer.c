@@ -337,9 +337,11 @@ pack_from_list(PyObject *obj, PyObject *items, PyObject *format,
     offset = NULL;
     for (i = 0; i < nitems; i++) {
         /* Loop invariant: args[j] are borrowed references or NULL. */
-        PyTuple_SET_ITEM(args, 0, obj);
-        for (j = 1; j < 2+nmemb; j++)
-            PyTuple_SET_ITEM(args, j, NULL);
+        PyTuple_SetItemRef(args, 0, obj);
+        Py_DECREF(obj);
+        for (j = 1; j < 2+nmemb; j++) {
+            PyTuple_SetItemRef(args, j, NULL);
+        }
 
         Py_XDECREF(offset);
         offset = PyLong_FromSsize_t(i*itemsize);
@@ -347,21 +349,28 @@ pack_from_list(PyObject *obj, PyObject *items, PyObject *format,
             ret = -1;
             break;
         }
-        PyTuple_SET_ITEM(args, 1, offset);
+        PyTuple_SetItemRef(args, 1, offset);
+        Py_DECREF(offset);
 
-        item = PySequence_Fast_GET_ITEM(items, i);
+        item = PySequence_Fast_GetItemRef(items, i);
         if ((PyBytes_Check(item) || PyLong_Check(item) ||
              PyFloat_Check(item)) && nmemb == 1) {
-            PyTuple_SET_ITEM(args, 2, item);
+            PyTuple_SetItemRef(args, 2, item);
+            Py_DECREF(item);
+            Py_DECREF(item);
         }
         else if ((PyList_Check(item) || PyTuple_Check(item)) &&
                  PySequence_Length(item) == nmemb) {
             for (j = 0; j < nmemb; j++) {
-                tmp = PySequence_Fast_GET_ITEM(item, j);
-                PyTuple_SET_ITEM(args, 2+j, tmp);
+                tmp = PySequence_Fast_GetItemRef(item, j);
+                PyTuple_SetItemRef(args, 2+j, tmp);
+                Py_DECREF(tmp);
+                Py_DECREF(tmp);
             }
+            Py_DECREF(item);
         }
         else {
+            Py_DECREF(item);
             PyErr_SetString(PyExc_ValueError,
                 "mismatch between initializer element and format string");
             ret = -1;
@@ -379,8 +388,7 @@ pack_from_list(PyObject *obj, PyObject *items, PyObject *format,
     Py_INCREF(obj); /* args[0] */
     /* args[1]: offset is either NULL or should be dealloc'd */
     for (i = 2; i < 2+nmemb; i++) {
-        tmp = PyTuple_GET_ITEM(args, i);
-        Py_XINCREF(tmp);
+        tmp = PyTuple_GetItemRef(args, i);
     }
     Py_DECREF(args);
 
@@ -429,18 +437,23 @@ pack_single(char *ptr, PyObject *item, const char *fmt, Py_ssize_t itemsize)
     if (args == NULL)
         goto out;
 
-    PyTuple_SET_ITEM(args, 0, mview);
-    PyTuple_SET_ITEM(args, 1, zero);
+    PyTuple_SetItemRef(args, 0, mview);
+    Py_DECREF(mview);
+    PyTuple_SetItemRef(args, 1, zero);
+    Py_DECREF(zero);
 
     if ((PyBytes_Check(item) || PyLong_Check(item) ||
          PyFloat_Check(item)) && nmemb == 1) {
-         PyTuple_SET_ITEM(args, 2, item);
+         PyTuple_SetItemRef(args, 2, item);
+         Py_DECREF(item);
     }
     else if ((PyList_Check(item) || PyTuple_Check(item)) &&
              PySequence_Length(item) == nmemb) {
         for (i = 0; i < nmemb; i++) {
-            x = PySequence_Fast_GET_ITEM(item, i);
-            PyTuple_SET_ITEM(args, 2+i, x);
+            x = PySequence_Fast_GetItemRef(item, i);
+            PyTuple_SetItemRef(args, 2+i, x);
+            Py_DECREF(x);
+            Py_DECREF(x);
         }
     }
     else {
@@ -457,8 +470,10 @@ pack_single(char *ptr, PyObject *item, const char *fmt, Py_ssize_t itemsize)
 
 
 args_out:
-    for (i = 0; i < 2+nmemb; i++)
-        Py_XINCREF(PyTuple_GET_ITEM(args, i));
+    for (i = 0; i < 2+nmemb; i++) {
+        /* increment the reference counter */
+        PyTuple_GetItemRef(args, i);
+    }
     Py_XDECREF(args);
 out:
     Py_XDECREF(pack_into);
@@ -595,8 +610,7 @@ unpack_single(char *ptr, const char *fmt, Py_ssize_t itemsize)
         return NULL;
 
     if (PyTuple_GET_SIZE(x) == 1) {
-        PyObject *tmp = PyTuple_GET_ITEM(x, 0);
-        Py_INCREF(tmp);
+        PyObject *tmp = PyTuple_GetItemRef(x, 0);
         Py_DECREF(x);
         return tmp;
     }
@@ -624,8 +638,7 @@ unpack_rec(PyObject *unpack_from, char *ptr, PyObject *mview, char *item,
         if (x == NULL)
             return NULL;
         if (PyTuple_GET_SIZE(x) == 1) {
-            PyObject *tmp = PyTuple_GET_ITEM(x, 0);
-            Py_INCREF(tmp);
+            PyObject *tmp = PyTuple_GetItemRef(x, 0);
             Py_DECREF(x);
             return tmp;
         }
@@ -858,8 +871,9 @@ seq_as_ssize_array(PyObject *seq, Py_ssize_t len, int is_shape)
     }
 
     for (i = 0; i < len; i++) {
-        PyObject *tmp = PySequence_Fast_GET_ITEM(seq, i);
+        PyObject *tmp = PySequence_Fast_GetItemRef(seq, i);
         if (!PyLong_Check(tmp)) {
+            Py_DECREF(tmp);
             PyErr_Format(PyExc_ValueError,
                 "elements of %s must be integers",
                 is_shape ? "shape" : "strides");
@@ -867,6 +881,7 @@ seq_as_ssize_array(PyObject *seq, Py_ssize_t len, int is_shape)
             return NULL;
         }
         x = PyLong_AsSsize_t(tmp);
+        Py_DECREF(tmp);
         if (PyErr_Occurred()) {
             PyMem_Free(dest);
             return NULL;
@@ -1836,11 +1851,16 @@ ndarray_subscript(NDArrayObject *self, PyObject *key)
 
         n = PyTuple_GET_SIZE(tuple);
         for (i = 0; i < n; i++) {
-            key = PyTuple_GET_ITEM(tuple, i);
-            if (!PySlice_Check(key))
+            key = PyTuple_GetItemRef(tuple, i);
+            if (!PySlice_Check(key)) {
+                Py_DECREF(key);
                 goto type_error;
-            if (init_slice(base, key, (int)i) < 0)
+            }
+            if (init_slice(base, key, (int)i) < 0) {
+                Py_DECREF(key);
                 goto err_occurred;
+            }
+            Py_DECREF(key);
         }
     }
     else {
@@ -1948,7 +1968,8 @@ slice_indices(PyObject *self, PyObject *args)
         tmp = PyLong_FromSsize_t(s[i]);
         if (tmp == NULL)
             goto error;
-        PyTuple_SET_ITEM(ret, i, tmp);
+        PyTuple_SetItemRef(ret, i, tmp);
+        Py_DECREF(tmp);
     }
 
     return ret;
@@ -1996,7 +2017,8 @@ ssize_array_as_tuple(Py_ssize_t *array, Py_ssize_t len)
             Py_DECREF(tuple);
             return NULL;
         }
-        PyTuple_SET_ITEM(tuple, i, x);
+        PyTuple_SetItemRef(tuple, i, x);
+        Py_DECREF(x);
     }
 
     return tuple;
@@ -2333,8 +2355,9 @@ get_pointer(PyObject *self, PyObject *args)
     }
 
     for (i = 0; i < view.ndim; i++) {
-        PyObject *x = PySequence_Fast_GET_ITEM(seq, i);
+        PyObject *x = PySequence_Fast_GetItemRef(seq, i);
         indices[i] = PyLong_AsSsize_t(x);
+        Py_DECREF(x);
         if (PyErr_Occurred())
             goto out;
         if (indices[i] < 0 || indices[i] >= view.shape[i]) {

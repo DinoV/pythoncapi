@@ -29,7 +29,9 @@ void pysqlite_row_dealloc(pysqlite_Row* self)
     Py_XDECREF(self->data);
     Py_XDECREF(self->description);
 
-    Py_TYPE(self)->tp_free((PyObject*)self);
+    PyTypeObject *type = Py_GetType(self);
+    type->tp_free((PyObject*)self);
+    Py_DECREF(type);
 }
 
 static PyObject *
@@ -192,7 +194,9 @@ static PyObject* pysqlite_row_richcompare(pysqlite_Row *self, PyObject *_other, 
     if (opid != Py_EQ && opid != Py_NE)
         Py_RETURN_NOTIMPLEMENTED;
 
-    if (PyType_IsSubtype(Py_TYPE(_other), &pysqlite_RowType)) {
+    PyTypeObject *other_type = Py_GetType(_other);
+    Py_DECREF(other_type);
+    if (PyType_IsSubtype(other_type, &pysqlite_RowType)) {
         pysqlite_Row *other = (pysqlite_Row *)_other;
         PyObject *res = PyObject_RichCompare(self->description, other->description, opid);
         if ((opid == Py_EQ && res == Py_True)

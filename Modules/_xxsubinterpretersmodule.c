@@ -1512,7 +1512,9 @@ channelid_dealloc(PyObject *v)
 {
     int64_t cid = ((channelid *)v)->id;
     _channels *channels = ((channelid *)v)->channels;
-    Py_TYPE(v)->tp_free(v);
+    PyTypeObject *type = Py_GetType(v);
+    type->tp_free(v);
+    Py_DECREF(type);
 
     _channels_drop_id_object(channels, cid);
 }
@@ -1520,8 +1522,9 @@ channelid_dealloc(PyObject *v)
 static PyObject *
 channelid_repr(PyObject *self)
 {
-    PyTypeObject *type = Py_TYPE(self);
+    PyTypeObject *type = Py_GetType(self);
     const char *name = _PyType_Name(type);
+    PyObject *repr;
 
     channelid *cid = (channelid *)self;
     const char *fmt;
@@ -1534,7 +1537,9 @@ channelid_repr(PyObject *self)
     else {
         fmt = "%s(%" PRId64 ")";
     }
-    return PyUnicode_FromFormat(fmt, name, cid->id);
+    repr = PyUnicode_FromFormat(fmt, name, cid->id);
+    Py_DECREF(type);
+    return repr;
 }
 
 static PyObject *
@@ -1732,8 +1737,12 @@ channelid_end(PyObject *self, void *end)
     int force = 1;
     channelid *cid = (channelid *)self;
     if (end != NULL) {
-        return (PyObject *)newchannelid(Py_TYPE(self), cid->id, *(int *)end,
-                                        cid->channels, force, cid->resolve);
+        PyTypeObject *type = Py_GetType(self);
+        PyObject *res;
+        res = (PyObject *)newchannelid(type, cid->id, *(int *)end,
+                                       cid->channels, force, cid->resolve);
+        Py_DECREF(type);
+        return res;
     }
 
     if (cid->end == CHANNEL_SEND) {
@@ -2046,16 +2055,20 @@ interpid_dealloc(PyObject *v)
         // already deleted
         PyErr_Clear();
     }
-    Py_TYPE(v)->tp_free(v);
+    PyTypeObject *type = Py_GetType(v);
+    type->tp_free(v);
+    Py_DECREF(type);
 }
 
 static PyObject *
 interpid_repr(PyObject *self)
 {
-    PyTypeObject *type = Py_TYPE(self);
+    PyTypeObject *type = Py_GetType(self);
     const char *name = _PyType_Name(type);
     interpid *id = (interpid *)self;
-    return PyUnicode_FromFormat("%s(%" PRId64 ")", name, id->id);
+    PyObject *repr = PyUnicode_FromFormat("%s(%" PRId64 ")", name, id->id);
+    Py_DECREF(type);
+    return repr;
 }
 
 static PyObject *

@@ -247,8 +247,8 @@ PyCurses_ConvertToChtype(PyCursesWindowObject *win, PyObject *obj, chtype *ch)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "expect bytes or str of length 1, or int, got %s",
-                     Py_TYPE(obj)->tp_name);
+                     "expect bytes or str of length 1, or int, got %T",
+                     obj);
         return 0;
     }
     *ch = (chtype)value;
@@ -315,8 +315,8 @@ PyCurses_ConvertToCchar_t(PyCursesWindowObject *win, PyObject *obj,
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "expect bytes or str of length 1, or int, got %s",
-                     Py_TYPE(obj)->tp_name);
+                     "expect bytes or str of length 1, or int, got %T",
+                     obj);
         return 0;
     }
 
@@ -370,8 +370,8 @@ PyCurses_ConvertToString(PyCursesWindowObject *win, PyObject *obj,
         return 1;
     }
 
-    PyErr_Format(PyExc_TypeError, "expect bytes or str, got %s",
-                 Py_TYPE(obj)->tp_name);
+    PyErr_Format(PyExc_TypeError, "expect bytes or str, got %T",
+                 obj);
     return 0;
 }
 
@@ -4203,8 +4203,8 @@ PyCurses_ConvertToWchar_t(PyObject *obj,
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "expect bytes or str of length 1, or int, got %s",
-                     Py_TYPE(obj)->tp_name);
+                     "expect bytes or str of length 1, or int, got %T",
+                     obj);
         return 0;
     }
 }

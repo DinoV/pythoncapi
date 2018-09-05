@@ -106,7 +106,7 @@ enum machine_format_code {
 #include "clinic/arraymodule.c.h"
 
 #define array_Check(op) PyObject_TypeCheck(op, &Arraytype)
-#define array_CheckExact(op) (Py_TYPE(op) == &Arraytype)
+#define array_CheckExact(op) Py_TYPE_IS((op), &Arraytype)
 
 static int
 array_resize(arrayobject *self, Py_ssize_t newsize)
@@ -659,7 +659,9 @@ array_dealloc(arrayobject *op)
         PyObject_ClearWeakRefs((PyObject *) op);
     if (op->ob_item != NULL)
         PyMem_DEL(op->ob_item);
-    Py_TYPE(op)->tp_free((PyObject *)op);
+    PyTypeObject *type = Py_GetType(op);
+    type->tp_free((PyObject *)op);
+    Py_DECREF(type);
 }
 
 static PyObject *
@@ -851,8 +853,7 @@ array_concat(arrayobject *a, PyObject *bb)
     arrayobject *np;
     if (!array_Check(bb)) {
         PyErr_Format(PyExc_TypeError,
-             "can only append array (not \"%.200s\") to array",
-                 Py_TYPE(bb)->tp_name);
+                     "can only append array (not %T) to array", bb);
         return NULL;
     }
 #define b ((arrayobject *)bb)
@@ -1029,8 +1030,7 @@ array_inplace_concat(arrayobject *self, PyObject *bb)
 {
     if (!array_Check(bb)) {
         PyErr_Format(PyExc_TypeError,
-            "can only extend array with array (not \"%.200s\")",
-            Py_TYPE(bb)->tp_name);
+            "can only extend array with array (not %T)", bb);
         return NULL;
     }
     if (array_do_extend(self, bb) == -1)
@@ -1768,7 +1768,9 @@ array_array___sizeof___impl(arrayobject *self)
 /*[clinic end generated code: output=d8e1c61ebbe3eaed input=805586565bf2b3c6]*/
 {
     Py_ssize_t res;
-    res = _PyObject_SIZE(Py_TYPE(self)) + self->allocated * self->ob_descr->itemsize;
+    PyTypeObject *type = Py_GetType(self);
+    res = _PyObject_SIZE(type) + self->allocated * self->ob_descr->itemsize;
+    Py_DECREF(type);
     return PyLong_FromSsize_t(res);
 }
 
@@ -1977,8 +1979,8 @@ array__array_reconstructor_impl(PyObject *module, PyTypeObject *arraytype,
 
     if (!PyType_Check(arraytype)) {
         PyErr_Format(PyExc_TypeError,
-            "first argument must be a type object, not %.200s",
-            Py_TYPE(arraytype)->tp_name);
+                        "first argument must be a type object, not %T",
+                        arraytype);
         return NULL;
     }
     if (!PyType_IsSubtype(arraytype, &Arraytype)) {
@@ -2004,8 +2006,8 @@ array__array_reconstructor_impl(PyObject *module, PyTypeObject *arraytype,
     }
     if (!PyBytes_Check(items)) {
         PyErr_Format(PyExc_TypeError,
-            "fourth argument should be bytes, not %.200s",
-            Py_TYPE(items)->tp_name);
+            "fourth argument should be bytes, not %T",
+            items);
         return NULL;
     }
 
@@ -2235,7 +2237,7 @@ array_array___reduce_ex__(arrayobject *self, PyObject *value)
             return NULL;
         }
         result = Py_BuildValue(
-            "O(CO)O", Py_TYPE(self), typecode, list, dict);
+            "N(CO)O", Py_GetType(self), typecode, list, dict);
         Py_DECREF(list);
         Py_DECREF(dict);
         return result;
@@ -2247,7 +2249,7 @@ array_array___reduce_ex__(arrayobject *self, PyObject *value)
         return NULL;
     }
     result = Py_BuildValue(
-        "O(OCiN)O", array_reconstructor, Py_TYPE(self), typecode,
+        "O(NCiN)O", array_reconstructor, Py_GetType(self), typecode,
         mformat_code, array_str, dict);
     Py_DECREF(dict);
     return result;
@@ -2308,12 +2310,16 @@ array_repr(arrayobject *a)
     char typecode;
     PyObject *s, *v = NULL;
     Py_ssize_t len;
+    PyTypeObject *type;
 
     len = Py_SIZE(a);
     typecode = a->ob_descr->typecode;
     if (len == 0) {
-        return PyUnicode_FromFormat("%s('%c')",
-                                    _PyType_Name(Py_TYPE(a)), (int)typecode);
+        type = Py_GetType(a);
+        s = PyUnicode_FromFormat("%s('%c')",
+                                 _PyType_Name(type), (int)typecode);
+        Py_DECREF(type);
+        return s;
     }
     if (typecode == 'u') {
         v = array_array_tounicode_impl(a);
@@ -2323,8 +2329,10 @@ array_repr(arrayobject *a)
     if (v == NULL)
         return NULL;
 
+    type = Py_GetType(a);
     s = PyUnicode_FromFormat("%s('%c', %R)",
-                             _PyType_Name(Py_TYPE(a)), (int)typecode, v);
+                             _PyType_Name(type), (int)typecode, v);
+    Py_DECREF(type);
     Py_DECREF(v);
     return s;
 }
@@ -2454,8 +2462,8 @@ array_ass_subscr(arrayobject* self, PyObject* item, PyObject* value)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-         "can only assign array (not \"%.200s\") to array slice",
-                         Py_TYPE(value)->tp_name);
+                     "can only assign array (not %T) to array slice",
+                     value);
         return -1;
     }
     itemsize = self->ob_descr->itemsize;

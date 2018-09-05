@@ -1517,8 +1517,8 @@ byref(PyObject *self, PyObject *args)
     }
     if (!CDataObject_Check(obj)) {
         PyErr_Format(PyExc_TypeError,
-                     "byref() argument must be a ctypes instance, not '%s'",
-                     Py_TYPE(obj)->tp_name);
+                     "byref() argument must be a ctypes instance, not '%T'",
+                     obj);
         return NULL;
     }
 
@@ -1689,10 +1689,12 @@ POINTER(PyObject *self, PyObject *cls)
         if (buf == NULL)
             return PyErr_NoMemory();
         sprintf(buf, "LP_%s", name);
-        result = PyObject_CallFunction((PyObject *)Py_TYPE(&PyCPointer_Type),
+        PyTypeObject *type = Py_GetType(&PyCPointer_Type);
+        result = PyObject_CallFunction((PyObject *)type,
                                        "s(O){}",
                                        buf,
                                        &PyCPointer_Type);
+        Py_DECREF(type);
         PyMem_Free(buf);
         if (result == NULL)
             return result;
@@ -1707,11 +1709,13 @@ POINTER(PyObject *self, PyObject *cls)
         if (buf == NULL)
             return PyErr_NoMemory();
         sprintf(buf, "LP_%s", typ->tp_name);
-        result = PyObject_CallFunction((PyObject *)Py_TYPE(&PyCPointer_Type),
+        PyTypeObject *type = Py_GetType(&PyCPointer_Type);
+        result = PyObject_CallFunction((PyObject *)type,
                                        "s(O){sO}",
                                        buf,
                                        &PyCPointer_Type,
                                        "_type_", cls);
+        Py_DECREF(type);
         PyMem_Free(buf);
         if (result == NULL)
             return result;
@@ -1736,10 +1740,14 @@ pointer(PyObject *self, PyObject *arg)
     PyObject *result;
     PyObject *typ;
 
-    typ = PyDict_GetItem(_ctypes_ptrtype_cache, (PyObject *)Py_TYPE(arg));
-    if (typ)
+    PyTypeObject *arg_type = Py_GetType(arg);
+    typ = PyDict_GetItem(_ctypes_ptrtype_cache, (PyObject *)arg_type);
+    if (typ) {
+        Py_DECREF(arg_type);
         return PyObject_CallFunctionObjArgs(typ, arg, NULL);
-    typ = POINTER(NULL, (PyObject *)Py_TYPE(arg));
+    }
+    typ = POINTER(NULL, (PyObject *)arg_type);
+    Py_DECREF(arg_type);
     if (typ == NULL)
                     return NULL;
     result = PyObject_CallFunctionObjArgs(typ, arg, NULL);

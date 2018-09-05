@@ -16,9 +16,9 @@
 #endif
 
 #define PyScanner_Check(op) PyObject_TypeCheck(op, &PyScannerType)
-#define PyScanner_CheckExact(op) (Py_TYPE(op) == &PyScannerType)
+#define PyScanner_CheckExact(op) (Py_TYPE_IS(op, &PyScannerType))
 #define PyEncoder_Check(op) PyObject_TypeCheck(op, &PyEncoderType)
-#define PyEncoder_CheckExact(op) (Py_TYPE(op) == &PyEncoderType)
+#define PyEncoder_CheckExact(op) (Py_TYPE_IS(op, &PyEncoderType))
 
 static PyTypeObject PyScannerType;
 static PyTypeObject PyEncoderType;
@@ -605,8 +605,8 @@ py_scanstring(PyObject* self UNUSED, PyObject *args)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "first argument must be a string, not %.80s",
-                     Py_TYPE(pystr)->tp_name);
+                     "first argument must be a string, not %T",
+                     pystr);
         return NULL;
     }
     return _build_rval_index_tuple(rval, next_end);
@@ -629,8 +629,8 @@ py_encode_basestring_ascii(PyObject* self UNUSED, PyObject *pystr)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "first argument must be a string, not %.80s",
-                     Py_TYPE(pystr)->tp_name);
+                     "first argument must be a string, not %T",
+                     pystr);
         return NULL;
     }
     return rval;
@@ -654,8 +654,8 @@ py_encode_basestring(PyObject* self UNUSED, PyObject *pystr)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "first argument must be a string, not %.80s",
-                     Py_TYPE(pystr)->tp_name);
+                     "first argument must be a string, not %T",
+                     pystr);
         return NULL;
     }
     return rval;
@@ -667,7 +667,9 @@ scanner_dealloc(PyObject *self)
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(self);
     scanner_clear(self);
-    Py_TYPE(self)->tp_free(self);
+    PyTypeObject *type = Py_GetType(self);
+    type->tp_free(self);
+    Py_DECREF(type);
 }
 
 static int
@@ -1183,8 +1185,8 @@ scanner_call(PyObject *self, PyObject *args, PyObject *kwds)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                 "first argument must be a string, not %.80s",
-                 Py_TYPE(pystr)->tp_name);
+                 "first argument must be a string, not %T",
+                 pystr);
         return NULL;
     }
     PyDict_Clear(s->memo);
@@ -1308,7 +1310,7 @@ encoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (markers != Py_None && !PyDict_Check(markers)) {
         PyErr_Format(PyExc_TypeError,
                      "make_encoder() argument 1 must be dict or None, "
-                     "not %.200s", Py_TYPE(markers)->tp_name);
+                     "not %T", markers);
         return NULL;
     }
 
@@ -1439,8 +1441,8 @@ encoder_encode_string(PyEncoderObject *s, PyObject *obj)
     encoded = PyObject_CallFunctionObjArgs(s->encoder, obj, NULL);
     if (encoded != NULL && !PyUnicode_Check(encoded)) {
         PyErr_Format(PyExc_TypeError,
-                     "encoder() must return a string, not %.80s",
-                     Py_TYPE(encoded)->tp_name);
+                     "encoder() must return a string, not %T",
+                     encoded);
         Py_DECREF(encoded);
         return NULL;
     }
@@ -1812,7 +1814,9 @@ encoder_dealloc(PyObject *self)
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(self);
     encoder_clear(self);
-    Py_TYPE(self)->tp_free(self);
+    PyTypeObject *type = Py_GetType(self);
+    type->tp_free(self);
+    Py_DECREF(type);
 }
 
 static int

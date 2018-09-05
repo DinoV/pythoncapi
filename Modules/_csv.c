@@ -312,7 +312,9 @@ static void
 Dialect_dealloc(DialectObj *self)
 {
     Py_XDECREF(self->lineterminator);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    PyTypeObject *type = Py_GetType(self);
+    type->tp_free((PyObject *)self);
+    Py_DECREF(type);
 }
 
 static char *dialect_kws[] = {

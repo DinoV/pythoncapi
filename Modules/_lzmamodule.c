@@ -594,8 +594,8 @@ _lzma_LZMACompressor_flush_impl(Compressor *self)
 static PyObject *
 Compressor_getstate(Compressor *self, PyObject *noargs)
 {
-    PyErr_Format(PyExc_TypeError, "cannot serialize '%s' object",
-                 Py_TYPE(self)->tp_name);
+    PyErr_Format(PyExc_TypeError, "cannot serialize %T object",
+                 self);
     return NULL;
 }
 
@@ -788,7 +788,9 @@ Compressor_dealloc(Compressor *self)
     lzma_end(&self->lzs);
     if (self->lock != NULL)
         PyThread_free_lock(self->lock);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    PyTypeObject *type = Py_GetType(self);
+    type->tp_free((PyObject *)self);
+    Py_DECREF(type);
 }
 
 static PyMethodDef Compressor_methods[] = {
@@ -1081,8 +1083,8 @@ _lzma_LZMADecompressor_decompress_impl(Decompressor *self, Py_buffer *data,
 static PyObject *
 Decompressor_getstate(Decompressor *self, PyObject *noargs)
 {
-    PyErr_Format(PyExc_TypeError, "cannot serialize '%s' object",
-                 Py_TYPE(self)->tp_name);
+    PyErr_Format(PyExc_TypeError, "cannot serialize %T object",
+                 self);
     return NULL;
 }
 
@@ -1230,7 +1232,9 @@ Decompressor_dealloc(Decompressor *self)
     Py_CLEAR(self->unused_data);
     if (self->lock != NULL)
         PyThread_free_lock(self->lock);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    PyTypeObject *type = Py_GetType(self);
+    type->tp_free((PyObject *)self);
+    Py_DECREF(type);
 }
 
 static PyMethodDef Decompressor_methods[] = {

@@ -231,8 +231,8 @@ _Pickle_InitState(PickleState *st)
         goto error;
     if (!PyDict_CheckExact(st->dispatch_table)) {
         PyErr_Format(PyExc_RuntimeError,
-                     "copyreg.dispatch_table should be a dict, not %.200s",
-                     Py_TYPE(st->dispatch_table)->tp_name);
+                     "copyreg.dispatch_table should be a dict, not %T",
+                     st->dispatch_table);
         goto error;
     }
     st->extension_registry = \
@@ -242,7 +242,7 @@ _Pickle_InitState(PickleState *st)
     if (!PyDict_CheckExact(st->extension_registry)) {
         PyErr_Format(PyExc_RuntimeError,
                      "copyreg._extension_registry should be a dict, "
-                     "not %.200s", Py_TYPE(st->extension_registry)->tp_name);
+                     "not %T", st->extension_registry);
         goto error;
     }
     st->inverted_registry = \
@@ -252,7 +252,7 @@ _Pickle_InitState(PickleState *st)
     if (!PyDict_CheckExact(st->inverted_registry)) {
         PyErr_Format(PyExc_RuntimeError,
                      "copyreg._inverted_registry should be a dict, "
-                     "not %.200s", Py_TYPE(st->inverted_registry)->tp_name);
+                     "not %T", st->inverted_registry);
         goto error;
     }
     st->extension_cache = PyObject_GetAttrString(copyreg, "_extension_cache");
@@ -261,7 +261,7 @@ _Pickle_InitState(PickleState *st)
     if (!PyDict_CheckExact(st->extension_cache)) {
         PyErr_Format(PyExc_RuntimeError,
                      "copyreg._extension_cache should be a dict, "
-                     "not %.200s", Py_TYPE(st->extension_cache)->tp_name);
+                     "not %T", st->extension_cache);
         goto error;
     }
     Py_CLEAR(copyreg);
@@ -277,7 +277,7 @@ _Pickle_InitState(PickleState *st)
     if (!PyDict_CheckExact(st->name_mapping_2to3)) {
         PyErr_Format(PyExc_RuntimeError,
                      "_compat_pickle.NAME_MAPPING should be a dict, not %.200s",
-                     Py_TYPE(st->name_mapping_2to3)->tp_name);
+                     st->name_mapping_2to3);
         goto error;
     }
     st->import_mapping_2to3 = \
@@ -287,7 +287,7 @@ _Pickle_InitState(PickleState *st)
     if (!PyDict_CheckExact(st->import_mapping_2to3)) {
         PyErr_Format(PyExc_RuntimeError,
                      "_compat_pickle.IMPORT_MAPPING should be a dict, "
-                     "not %.200s", Py_TYPE(st->import_mapping_2to3)->tp_name);
+                     "not %T", st->import_mapping_2to3);
         goto error;
     }
     /* ... and the 3.x -> 2.x mapping tables */
@@ -298,7 +298,7 @@ _Pickle_InitState(PickleState *st)
     if (!PyDict_CheckExact(st->name_mapping_3to2)) {
         PyErr_Format(PyExc_RuntimeError,
                      "_compat_pickle.REVERSE_NAME_MAPPING should be a dict, "
-                     "not %.200s", Py_TYPE(st->name_mapping_3to2)->tp_name);
+                     "not %T", st->name_mapping_3to2);
         goto error;
     }
     st->import_mapping_3to2 = \
@@ -308,7 +308,7 @@ _Pickle_InitState(PickleState *st)
     if (!PyDict_CheckExact(st->import_mapping_3to2)) {
         PyErr_Format(PyExc_RuntimeError,
                      "_compat_pickle.REVERSE_IMPORT_MAPPING should be a dict, "
-                     "not %.200s", Py_TYPE(st->import_mapping_3to2)->tp_name);
+                     "not %T", st->import_mapping_3to2);
         goto error;
     }
     Py_CLEAR(compat_pickle);
@@ -323,7 +323,7 @@ _Pickle_InitState(PickleState *st)
     if (!PyCallable_Check(st->codecs_encode)) {
         PyErr_Format(PyExc_RuntimeError,
                      "codecs.encode should be a callable, not %.200s",
-                     Py_TYPE(st->codecs_encode)->tp_name);
+                     st->codecs_encode);
         goto error;
     }
     Py_CLEAR(codecs);
@@ -3277,8 +3277,8 @@ fix_imports(PyObject **module_name, PyObject **global_name)
         if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 2) {
             PyErr_Format(PyExc_RuntimeError,
                          "_compat_pickle.REVERSE_NAME_MAPPING values "
-                         "should be 2-tuples, not %.200s",
-                         Py_TYPE(item)->tp_name);
+                         "should be 2-tuples, not %T",
+                         item);
             return -1;
         }
         fixed_module_name = PyTuple_GetItemRef(item, 0);
@@ -3289,9 +3289,9 @@ fix_imports(PyObject **module_name, PyObject **global_name)
             Py_DECREF(fixed_global_name);
             PyErr_Format(PyExc_RuntimeError,
                          "_compat_pickle.REVERSE_NAME_MAPPING values "
-                         "should be pairs of str, not (%.200s, %.200s)",
-                         Py_TYPE(fixed_module_name)->tp_name,
-                         Py_TYPE(fixed_global_name)->tp_name);
+                         "should be pairs of str, not (%T, %T)",
+                         fixed_module_name,
+                         fixed_global_name);
             return -1;
         }
 
@@ -3310,8 +3310,8 @@ fix_imports(PyObject **module_name, PyObject **global_name)
         if (!PyUnicode_Check(item)) {
             PyErr_Format(PyExc_RuntimeError,
                          "_compat_pickle.REVERSE_IMPORT_MAPPING values "
-                         "should be strings, not %.200s",
-                         Py_TYPE(item)->tp_name);
+                         "should be strings, not %T",
+                         item);
             return -1;
         }
         Py_INCREF(item);
@@ -3673,8 +3673,7 @@ get_class(PyObject *obj)
     _Py_IDENTIFIER(__class__);
 
     if (_PyObject_LookupAttrId(obj, &PyId___class__, &cls) == 0) {
-        cls = (PyObject *) Py_TYPE(obj);
-        Py_INCREF(cls);
+        cls = (PyObject *) Py_GetType(obj);
     }
     return cls;
 }
@@ -3728,8 +3727,8 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
         listitems = NULL;
     else if (!PyIter_Check(listitems)) {
         PyErr_Format(st->PicklingError, "fourth element of the tuple "
-                     "returned by __reduce__ must be an iterator, not %s",
-                     Py_TYPE(listitems)->tp_name);
+                     "returned by __reduce__ must be an iterator, not %T",
+                     listitems);
         return -1;
     }
 
@@ -3737,8 +3736,8 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
         dictitems = NULL;
     else if (!PyIter_Check(dictitems)) {
         PyErr_Format(st->PicklingError, "fifth element of the tuple "
-                     "returned by __reduce__ must be an iterator, not %s",
-                     Py_TYPE(dictitems)->tp_name);
+                     "returned by __reduce__ must be an iterator, not %T",
+                     dictitems);
         return -1;
     }
 
@@ -3778,7 +3777,7 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
             Py_DECREF(cls);
             PyErr_Format(st->PicklingError,
                          "first item from NEWOBJ_EX argument tuple must "
-                         "be a class, not %.200s", Py_TYPE(cls)->tp_name);
+                         "be a class, not %T", cls);
             return -1;
         }
         args = PyTuple_GetItemRef(argtup, 1);
@@ -3787,7 +3786,7 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
             Py_DECREF(args);
             PyErr_Format(st->PicklingError,
                          "second item from NEWOBJ_EX argument tuple must "
-                         "be a tuple, not %.200s", Py_TYPE(args)->tp_name);
+                         "be a tuple, not %T", args);
             return -1;
         }
         kwargs = PyTuple_GetItemRef(argtup, 2);
@@ -3797,7 +3796,7 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
             Py_DECREF(kwargs);
             PyErr_Format(st->PicklingError,
                          "third item from NEWOBJ_EX argument tuple must "
-                         "be a dict, not %.200s", Py_TYPE(kwargs)->tp_name);
+                         "be a dict, not %T", kwargs);
             return -1;
         }
         Py_DECREF(cls);
@@ -4000,7 +3999,8 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
             return status;
     }
 
-    type = Py_TYPE(obj);
+    type = Py_GetType(obj);
+    Py_DECREF(type);
 
     /* The old cPickle had an optimization that used switch-case statement
        dispatching on the first letter of the type name.  This has was removed
@@ -4247,8 +4247,8 @@ _pickle_Pickler_dump(PicklerObject *self, PyObject *obj)
     if (self->write == NULL) {
         PickleState *st = _Pickle_GetGlobalState();
         PyErr_Format(st->PicklingError,
-                     "Pickler.__init__() was not called by %s.__init__()",
-                     Py_TYPE(self)->tp_name);
+                     "Pickler.__init__() was not called by %T.__init__()",
+                     self);
         return NULL;
     }
 
@@ -4277,7 +4277,9 @@ _pickle_Pickler___sizeof___impl(PicklerObject *self)
 {
     Py_ssize_t res, s;
 
-    res = _PyObject_SIZE(Py_TYPE(self));
+    PyTypeObject *type = Py_GetType(self);
+    res = _PyObject_SIZE(type);
+    Py_DECREF(type);
     if (self->memo != NULL) {
         res += sizeof(PyMemoTable);
         res += self->memo->mt_allocated * sizeof(PyMemoEntry);
@@ -4311,7 +4313,9 @@ Pickler_dealloc(PicklerObject *self)
 
     PyMemoTable_Del(self->memo);
 
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    PyTypeObject *type = Py_GetType(self);
+    type->tp_free((PyObject *)self);
+    Py_DECREF(type);
 }
 
 static int
@@ -4620,7 +4624,7 @@ Pickler_set_memo(PicklerObject *self, PyObject *obj)
         return -1;
     }
 
-    if (Py_TYPE(obj) == &PicklerMemoProxyType) {
+    if (Py_TYPE_IS(obj, &PicklerMemoProxyType)) {
         PicklerObject *pickler =
             ((PicklerMemoProxyObject *)obj)->pickler;
 
@@ -4661,7 +4665,7 @@ Pickler_set_memo(PicklerObject *self, PyObject *obj)
     else {
         PyErr_Format(PyExc_TypeError,
                      "'memo' attribute must be a PicklerMemoProxy object"
-                     "or dict, not %.200s", Py_TYPE(obj)->tp_name);
+                     "or dict, not %T", obj);
         return -1;
     }
 
@@ -5559,8 +5563,8 @@ load_newobj_ex(UnpicklerObject *self)
         Py_DECREF(kwargs);
         Py_DECREF(args);
         PyErr_Format(st->UnpicklingError,
-                     "NEWOBJ_EX class argument must be a type, not %.200s",
-                     Py_TYPE(cls)->tp_name);
+                     "NEWOBJ_EX class argument must be a type, not %T",
+                     cls);
         Py_DECREF(cls);
         return -1;
     }
@@ -6587,8 +6591,8 @@ _pickle_Unpickler_load_impl(UnpicklerObject *self)
     if (unpickler->read == NULL) {
         PickleState *st = _Pickle_GetGlobalState();
         PyErr_Format(st->UnpicklingError,
-                     "Unpickler.__init__() was not called by %s.__init__()",
-                     Py_TYPE(unpickler)->tp_name);
+                     "Unpickler.__init__() was not called by %T.__init__()",
+                     unpickler);
         return NULL;
     }
 
@@ -6645,7 +6649,7 @@ _pickle_Unpickler_find_class_impl(UnpicklerObject *self,
             if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 2) {
                 PyErr_Format(PyExc_RuntimeError,
                              "_compat_pickle.NAME_MAPPING values should be "
-                             "2-tuples, not %.200s", Py_TYPE(item)->tp_name);
+                             "2-tuples, not %T", item);
                 return NULL;
             }
             module_name = PyTuple_GetItemRef(item, 0);
@@ -6656,9 +6660,9 @@ _pickle_Unpickler_find_class_impl(UnpicklerObject *self,
                 Py_DECREF(global_name);
                 PyErr_Format(PyExc_RuntimeError,
                              "_compat_pickle.NAME_MAPPING values should be "
-                             "pairs of str, not (%.200s, %.200s)",
-                             Py_TYPE(module_name)->tp_name,
-                             Py_TYPE(global_name)->tp_name);
+                             "pairs of str, not (%T, %T)",
+                             module_name,
+                             global_name);
                 return NULL;
             }
             Py_DECREF(module_name);
@@ -6674,7 +6678,7 @@ _pickle_Unpickler_find_class_impl(UnpicklerObject *self,
                 if (!PyUnicode_Check(item)) {
                     PyErr_Format(PyExc_RuntimeError,
                                 "_compat_pickle.IMPORT_MAPPING values should be "
-                                "strings, not %.200s", Py_TYPE(item)->tp_name);
+                                "strings, not %T", item);
                     return NULL;
                 }
                 module_name = item;
@@ -6711,7 +6715,9 @@ _pickle_Unpickler___sizeof___impl(UnpicklerObject *self)
 {
     Py_ssize_t res;
 
-    res = _PyObject_SIZE(Py_TYPE(self));
+    PyTypeObject *type = Py_GetType(self);
+    res = _PyObject_SIZE(type);
+    Py_DECREF(type);
     if (self->memo != NULL)
         res += self->memo_size * sizeof(PyObject *);
     if (self->marks != NULL)
@@ -6752,7 +6758,9 @@ Unpickler_dealloc(UnpicklerObject *self)
     PyMem_Free(self->encoding);
     PyMem_Free(self->errors);
 
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    PyTypeObject *type = Py_GetType(self);
+    type->tp_free((PyObject *)self);
+    Py_DECREF(type);
 }
 
 static int
@@ -7066,7 +7074,7 @@ Unpickler_set_memo(UnpicklerObject *self, PyObject *obj)
         return -1;
     }
 
-    if (Py_TYPE(obj) == &UnpicklerMemoProxyType) {
+    if (Py_TYPE_IS(obj, &UnpicklerMemoProxyType)) {
         UnpicklerObject *unpickler =
             ((UnpicklerMemoProxyObject *)obj)->unpickler;
 
@@ -7111,7 +7119,7 @@ Unpickler_set_memo(UnpicklerObject *self, PyObject *obj)
     else {
         PyErr_Format(PyExc_TypeError,
                      "'memo' attribute must be an UnpicklerMemoProxy object"
-                     "or dict, not %.200s", Py_TYPE(obj)->tp_name);
+                     "or dict, not %T", obj);
         return -1;
     }
 

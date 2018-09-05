@@ -778,8 +778,8 @@ readinst(char *buf, int buf_size, PyObject *meth)
         ptr = PyByteArray_AS_STRING(str);
     else {
         PyErr_Format(PyExc_TypeError,
-                     "read() did not return a bytes object (type=%.400s)",
-                     Py_TYPE(str)->tp_name);
+                     "read() did not return a bytes object (type=%T)",
+                     str);
         goto error;
     }
     len = Py_SIZE(str);

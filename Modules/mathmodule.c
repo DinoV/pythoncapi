@@ -1729,17 +1729,21 @@ math_trunc(PyObject *module, PyObject *x)
     _Py_IDENTIFIER(__trunc__);
     PyObject *trunc, *result;
 
-    if (Py_TYPE(x)->tp_dict == NULL) {
-        if (PyType_Ready(Py_TYPE(x)) < 0)
+    PyTypeObject *type = Py_GetType(x);
+    if (type->tp_dict == NULL) {
+        if (PyType_Ready(type) < 0) {
+            Py_DECREF(type);
             return NULL;
+        }
     }
+    Py_DECREF(type);
 
     trunc = _PyObject_LookupSpecial(x, &PyId___trunc__);
     if (trunc == NULL) {
         if (!PyErr_Occurred())
             PyErr_Format(PyExc_TypeError,
-                         "type %.100s doesn't define __trunc__ method",
-                         Py_TYPE(x)->tp_name);
+                         "type %T doesn't define __trunc__ method",
+                         x);
         return NULL;
     }
     result = _PyObject_CallNoArg(trunc);

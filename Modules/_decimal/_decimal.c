@@ -96,9 +96,9 @@ static PyTypeObject PyDec_Type;
 static PyTypeObject *PyDecSignalDict_Type;
 static PyTypeObject PyDecContext_Type;
 static PyTypeObject PyDecContextManager_Type;
-#define PyDec_CheckExact(v) (Py_TYPE(v) == &PyDec_Type)
+#define PyDec_CheckExact(v) Py_TYPE_IS(v, &PyDec_Type)
 #define PyDec_Check(v) PyObject_TypeCheck(v, &PyDec_Type)
-#define PyDecSignalDict_Check(v) (Py_TYPE(v) == PyDecSignalDict_Type)
+#define PyDecSignalDict_Check(v) Py_TYPE_IS(v, PyDecSignalDict_Type)
 #define PyDecContext_Check(v) PyObject_TypeCheck(v, &PyDecContext_Type)
 #define MPD(v) (&((PyDecObject *)v)->dec)
 #define SdFlagAddr(v) (((PyDecSignalDictObject *)v)->flags)
@@ -1219,7 +1219,9 @@ context_dealloc(PyDecContextObject *self)
 {
     Py_XDECREF(self->traps);
     Py_XDECREF(self->flags);
-    Py_TYPE(self)->tp_free(self);
+    PyTypeObject *type = Py_GetType(self);
+    type->tp_free(self);
+    Py_DECREF(type);
 }
 
 static int
@@ -1433,8 +1435,8 @@ context_reduce(PyObject *self, PyObject *args UNUSED)
     }
 
     ret = Py_BuildValue(
-            "O(nsnniiOO)",
-            Py_TYPE(self),
+            "N(nsnniiOO)",
+            Py_GetType(self),
             ctx->prec, mpd_round_string[ctx->round], ctx->emin, ctx->emax,
             CtxCaps(self), ctx->clamp, flags, traps
     );
@@ -1727,7 +1729,9 @@ static void
 dec_dealloc(PyObject *dec)
 {
     mpd_del(MPD(dec));
-    Py_TYPE(dec)->tp_free(dec);
+    PyTypeObject *type = Py_GetType(dec);
+    type->tp_free(dec);
+    Py_DECREF(type);
 }
 
 
@@ -4512,7 +4516,7 @@ dec_reduce(PyObject *self, PyObject *dummy UNUSED)
         return NULL;
     }
 
-    result = Py_BuildValue("O(O)", Py_TYPE(self), str);
+    result = Py_BuildValue("N(O)", Py_GetType(self), str);
     Py_DECREF(str);
 
     return result;
@@ -4524,7 +4528,9 @@ dec_sizeof(PyObject *v, PyObject *dummy UNUSED)
 {
     Py_ssize_t res;
 
-    res = _PyObject_SIZE(Py_TYPE(v));
+    PyTypeObject *type = Py_GetType(v);
+    res = _PyObject_SIZE(type);
+    Py_DECREF(type);
     if (mpd_isdynamic_data(MPD(v))) {
         res += MPD(v)->alloc * sizeof(mpd_uint_t);
     }

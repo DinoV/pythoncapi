@@ -374,7 +374,9 @@ parser_sizeof(PyST_Object *st, void *unused)
 {
     Py_ssize_t res;
 
-    res = _PyObject_SIZE(Py_TYPE(st)) + _PyNode_SizeOf(st->st_node);
+    PyTypeObject *type = Py_GetType(st);
+    res = _PyObject_SIZE(type) + _PyNode_SizeOf(st->st_node);
+    Py_DECREF(type);
     return PyLong_FromSsize_t(res);
 }
 
@@ -866,8 +868,8 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
             if (!PyUnicode_Check(temp)) {
                 PyErr_Format(parser_error,
                              "second item in terminal node must be a string,"
-                             " found %s",
-                             Py_TYPE(temp)->tp_name);
+                             " found %T",
+                             temp);
                 Py_DECREF(temp);
                 Py_DECREF(elem);
                 return NULL;
@@ -892,8 +894,8 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
                 else {
                     PyErr_Format(parser_error,
                                  "third item in terminal node must be an"
-                                 " integer, found %s",
-                                 Py_TYPE(temp)->tp_name);
+                                 " integer, found %T",
+                                 temp);
                     Py_DECREF(o);
                     Py_DECREF(temp);
                     Py_DECREF(elem);
@@ -995,8 +997,8 @@ build_node_tree(PyObject *tuple)
             }
             if (!PyUnicode_Check(encoding)) {
                 PyErr_Format(parser_error,
-                             "encoding must be a string, found %.200s",
-                             Py_TYPE(encoding)->tp_name);
+                             "encoding must be a string, found %T",
+                             encoding);
                 Py_DECREF(encoding);
                 return NULL;
             }

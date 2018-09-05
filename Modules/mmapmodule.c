@@ -138,7 +138,9 @@ mmap_object_dealloc(mmap_object *m_obj)
 
     if (m_obj->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) m_obj);
-    Py_TYPE(m_obj)->tp_free((PyObject*)m_obj);
+    PyTypeObject *type = Py_GetType(m_obj);
+    type->tp_free((PyObject*)m_obj);
+    Py_DECREF(type);
 }
 
 static PyObject *
@@ -688,7 +690,9 @@ mmap__sizeof__method(mmap_object *self, void *unused)
 {
     Py_ssize_t res;
 
-    res = _PyObject_SIZE(Py_TYPE(self));
+    PyTypeObject *type = Py_GetType(self);
+    res = _PyObject_SIZE(type);
+    Py_DECREF(type);
     if (self->tagname)
         res += strlen(self->tagname) + 1;
     return PyLong_FromSsize_t(res);

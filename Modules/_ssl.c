@@ -485,9 +485,9 @@ static int PySSL_select(PySocketSockObject *s, int writing, _PyTime_t timeout);
 
 static int PySSL_set_owner(PySSLSocket *, PyObject *, void *);
 static int PySSL_set_session(PySSLSocket *, PyObject *, void *);
-#define PySSLSocket_Check(v)    (Py_TYPE(v) == &PySSLSocket_Type)
-#define PySSLMemoryBIO_Check(v)    (Py_TYPE(v) == &PySSLMemoryBIO_Type)
-#define PySSLSession_Check(v)   (Py_TYPE(v) == &PySSLSession_Type)
+#define PySSLSocket_Check(v)    (Py_TYPE_IS(v, &PySSLSocket_Type))
+#define PySSLMemoryBIO_Check(v)    (Py_TYPE_IS(v, &PySSLMemoryBIO_Type))
+#define PySSLSession_Check(v)   (Py_TYPE_IS(v, &PySSLSession_Type))
 
 typedef enum {
     SOCKET_IS_NONBLOCKING,
@@ -3099,7 +3099,9 @@ context_dealloc(PySSLContext *self)
 #if HAVE_ALPN
     PyMem_FREE(self->alpn_protocols);
 #endif
-    Py_TYPE(self)->tp_free(self);
+    PyTypeObject *type = Py_GetType(self);
+    type->tp_free(self);
+    Py_DECREF(type);
 }
 
 /*[clinic input]
@@ -4575,7 +4577,9 @@ static void
 memory_bio_dealloc(PySSLMemoryBIO *self)
 {
     BIO_free(self->bio);
-    Py_TYPE(self)->tp_free(self);
+    PyTypeObject *type = Py_GetType(self);
+    type->tp_free(self);
+    Py_DECREF(type);
 }
 
 static PyObject *

@@ -278,7 +278,10 @@ _sha3_sha3_224_copy_impl(SHA3object *self)
 {
     SHA3object *newobj;
 
-    if ((newobj = newSHA3object(Py_TYPE(self))) == NULL) {
+    PyTypeObject *type = Py_GetType(self);
+    newobj = newSHA3object(type);
+    Py_DECREF(type);
+    if (newobj == NULL) {
         return NULL;
     }
     ENTER_HASHLIB(self);
@@ -412,7 +415,8 @@ SHA3_get_block_size(SHA3object *self, void *closure)
 static PyObject *
 SHA3_get_name(SHA3object *self, void *closure)
 {
-    PyTypeObject *type = Py_TYPE(self);
+    PyTypeObject *type = Py_GetType(self);
+    Py_DECREF(type);
     if (type == &SHA3_224type) {
         return PyUnicode_FromString("sha3_224");
     } else if (type == &SHA3_256type) {

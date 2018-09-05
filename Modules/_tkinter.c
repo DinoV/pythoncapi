@@ -816,10 +816,11 @@ newPyTclObject(Tcl_Obj *arg)
 static void
 PyTclObject_dealloc(PyTclObject *self)
 {
-    PyObject *tp = (PyObject *) Py_TYPE(self);
+    PyObject *tp = (PyObject *) Py_GetType(self);
     Tcl_DecrRefCount(self->value);
     Py_XDECREF(self->string);
     PyObject_Del(self);
+    Py_DECREF(tp);
     Py_DECREF(tp);
 }
 
@@ -2755,11 +2756,12 @@ Tktt_Dealloc(PyObject *self)
 {
     TkttObject *v = (TkttObject *)self;
     PyObject *func = v->func;
-    PyObject *tp = (PyObject *) Py_TYPE(self);
+    PyObject *tp = (PyObject *) Py_GetType(self);
 
     Py_XDECREF(func);
 
     PyObject_Del(self);
+    Py_DECREF(tp);
     Py_DECREF(tp);
 }
 
@@ -3028,12 +3030,13 @@ _tkinter_tkapp_willdispatch_impl(TkappObject *self)
 static void
 Tkapp_Dealloc(PyObject *self)
 {
-    PyObject *tp = (PyObject *) Py_TYPE(self);
+    PyObject *tp = (PyObject *) Py_GetType(self);
     /*CHECK_TCL_APPARTMENT;*/
     ENTER_TCL
     Tcl_DeleteInterp(Tkapp_Interp(self));
     LEAVE_TCL
     PyObject_Del(self);
+    Py_DECREF(tp);
     Py_DECREF(tp);
     DisableEventHook();
 }

@@ -47,7 +47,7 @@ typedef struct {
 
 
 #define PyStruct_Check(op) PyObject_TypeCheck(op, &PyStructType)
-#define PyStruct_CheckExact(op) (Py_TYPE(op) == &PyStructType)
+#define PyStruct_CheckExact(op) Py_TYPE_IS((op), &PyStructType)
 
 
 /* Exception */
@@ -1454,8 +1454,7 @@ Struct___init___impl(PyStructObject *self, PyObject *format)
         Py_DECREF(format);
         PyErr_Format(PyExc_TypeError,
                      "Struct() argument 1 must be a str or bytes object, "
-                     "not %.200s",
-                     Py_TYPE(format)->tp_name);
+                     "not %T", format);
         return -1;
     }
 
@@ -1474,7 +1473,9 @@ s_dealloc(PyStructObject *s)
         PyMem_FREE(s->s_codes);
     }
     Py_DECREF(s->s_format);
-    Py_TYPE(s)->tp_free((PyObject *)s);
+    PyTypeObject *type = Py_GetType(s);
+    type->tp_free((PyObject *)s);
+    Py_DECREF(type);
 }
 
 static PyObject *
@@ -1997,7 +1998,9 @@ s_sizeof(PyStructObject *self, void *unused)
     Py_ssize_t size;
     formatcode *code;
 
-    size = _PyObject_SIZE(Py_TYPE(self)) + sizeof(formatcode);
+    PyTypeObject *type = Py_GetType(self);
+    size = _PyObject_SIZE(type) + sizeof(formatcode);
+    Py_DECREF(type);
     for (code = self->s_codes; code->fmtdef != NULL; code++)
         size += sizeof(formatcode);
     return PyLong_FromSsize_t(size);

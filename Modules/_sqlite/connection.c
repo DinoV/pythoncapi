@@ -262,7 +262,9 @@ void pysqlite_connection_dealloc(pysqlite_Connection* self)
     Py_XDECREF(self->statements);
     Py_XDECREF(self->cursors);
 
-    Py_TYPE(self)->tp_free((PyObject*)self);
+    PyTypeObject *type = Py_GetType(self);
+    type->tp_free((PyObject*)self);
+    Py_DECREF(type);
 }
 
 /*
@@ -315,8 +317,8 @@ PyObject* pysqlite_connection_cursor(pysqlite_Connection* self, PyObject* args, 
         return NULL;
     if (!PyObject_TypeCheck(cursor, &pysqlite_CursorType)) {
         PyErr_Format(PyExc_TypeError,
-                     "factory must return a cursor, not %.100s",
-                     Py_TYPE(cursor)->tp_name);
+                     "factory must return a cursor, not %T",
+                     cursor);
         Py_DECREF(cursor);
         return NULL;
     }
@@ -1181,8 +1183,8 @@ static int pysqlite_connection_set_isolation_level(pysqlite_Connection* self, Py
 
         if (!PyUnicode_Check(isolation_level)) {
             PyErr_Format(PyExc_TypeError,
-                         "isolation_level must be a string or None, not %.100s",
-                         Py_TYPE(isolation_level)->tp_name);
+                         "isolation_level must be a string or None, not %T",
+                         isolation_level);
             return -1;
         }
 

@@ -110,7 +110,7 @@ typedef struct {
 static PyTypeObject PyProfiler_Type;
 
 #define PyProfiler_Check(op) PyObject_TypeCheck(op, &PyProfiler_Type)
-#define PyProfiler_CheckExact(op) (Py_TYPE(op) == &PyProfiler_Type)
+#define PyProfiler_CheckExact(op) (Py_TYPE_IS(op, &PyProfiler_Type))
 
 /*** External Timers ***/
 
@@ -201,7 +201,9 @@ normalizeUserObj(PyObject *obj)
         PyObject *modname = fn->m_module;
 
         if (name != NULL) {
-            PyObject *mo = _PyType_Lookup(Py_TYPE(self), name);
+            PyTypeObject *type = Py_GetType(self);
+            PyObject *mo = _PyType_Lookup(type, name);
+            Py_DECREF(type);
             Py_XINCREF(mo);
             Py_DECREF(name);
             if (mo != NULL) {
@@ -749,7 +751,9 @@ profiler_dealloc(ProfilerObject *op)
     flush_unmatched(op);
     clearEntries(op);
     Py_XDECREF(op->externalTimer);
-    Py_TYPE(op)->tp_free(op);
+    PyTypeObject *type = Py_GetType(op);
+    type->tp_free(op);
+    Py_DECREF(type);
 }
 
 static int

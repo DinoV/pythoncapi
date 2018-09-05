@@ -36,7 +36,9 @@ simplequeue_dealloc(simplequeueobject *self)
     Py_XDECREF(self->lst);
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) self);
-    Py_TYPE(self)->tp_free(self);
+    PyTypeObject *type = Py_GetType(self);
+    type->tp_free(self);
+    Py_DECREF(type);
 }
 
 static int

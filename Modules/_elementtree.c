@@ -203,7 +203,7 @@ typedef struct {
 } ElementObject;
 
 
-#define Element_CheckExact(op) (Py_TYPE(op) == &Element_Type)
+#define Element_CheckExact(op) (Py_TYPE_IS(op, &Element_Type))
 
 /* -------------------------------------------------------------------- */
 /* Element constructors and destructor */
@@ -332,8 +332,8 @@ get_attrib_from_keywords(PyObject *kwds)
          */
         if (!PyDict_Check(attrib)) {
             Py_DECREF(attrib_str);
-            PyErr_Format(PyExc_TypeError, "attrib must be dict, not %.100s",
-                         Py_TYPE(attrib)->tp_name);
+            PyErr_Format(PyExc_TypeError, "attrib must be dict, not %T",
+                         attrib);
             return NULL;
         }
         attrib = PyDict_Copy(attrib);
@@ -641,7 +641,9 @@ element_dealloc(ElementObject* self)
     element_gc_clear(self);
 
     RELEASE(sizeof(ElementObject), "destroy element");
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    PyTypeObject *type = Py_GetType(self);
+    type->tp_free((PyObject *)self);
+    Py_DECREF(type);
     Py_TRASHCAN_SAFE_END(self)
 }
 
@@ -873,7 +875,9 @@ static Py_ssize_t
 _elementtree_Element___sizeof___impl(ElementObject *self)
 /*[clinic end generated code: output=bf73867721008000 input=70f4b323d55a17c1]*/
 {
-    Py_ssize_t result = _PyObject_SIZE(Py_TYPE(self));
+    PyTypeObject *type = Py_GetType(self);
+    Py_ssize_t result = _PyObject_SIZE(type);
+    Py_DECREF(type);
     if (self->extra) {
         result += sizeof(ElementObjectExtra);
         if (self->extra->children != self->extra->_children)
@@ -1124,7 +1128,7 @@ _elementtree_Element_extend(ElementObject *self, PyObject *elements)
     if (!seq) {
         PyErr_Format(
             PyExc_TypeError,
-            "expected sequence, not \"%.200s\"", Py_TYPE(elements)->tp_name
+            "expected sequence, not \"%T\"", elements
             );
         return NULL;
     }
@@ -1134,8 +1138,8 @@ _elementtree_Element_extend(ElementObject *self, PyObject *elements)
         if (!PyObject_TypeCheck(element, (PyTypeObject *)&Element_Type)) {
             PyErr_Format(
                 PyExc_TypeError,
-                "expected an Element, not \"%.200s\"",
-                Py_TYPE(element)->tp_name);
+                "expected an Element, not \"%T\"",
+                element);
             Py_DECREF(seq);
             Py_DECREF(element);
             return NULL;
@@ -1648,8 +1652,8 @@ element_repr(ElementObject* self)
     }
     if (status > 0)
         PyErr_Format(PyExc_RuntimeError,
-                     "reentrant call inside %s.__repr__",
-                     Py_TYPE(self)->tp_name);
+                     "reentrant call inside %T.__repr__",
+                     self);
     return NULL;
 }
 
@@ -1870,7 +1874,7 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
         if (!seq) {
             PyErr_Format(
                 PyExc_TypeError,
-                "expected sequence, not \"%.200s\"", Py_TYPE(value)->tp_name
+                "expected sequence, not \"%T\"", value
                 );
             return -1;
         }
@@ -2173,8 +2177,8 @@ elementiter_next(ElementIterObject *it)
 
             if (!PyObject_TypeCheck(extra->children[child_index], &Element_Type)) {
                 PyErr_Format(PyExc_AttributeError,
-                             "'%.100s' object has no attribute 'iter'",
-                             Py_TYPE(extra->children[child_index])->tp_name);
+                             "'%T' object has no attribute 'iter'",
+                             extra->children[child_index]);
                 return NULL;
             }
             elem = (ElementObject *)extra->children[child_index];
@@ -2330,7 +2334,7 @@ typedef struct {
     PyObject *end_ns_event_obj;
 } TreeBuilderObject;
 
-#define TreeBuilder_CheckExact(op) (Py_TYPE(op) == &TreeBuilder_Type)
+#define TreeBuilder_CheckExact(op) (Py_TYPE_IS(op, &TreeBuilder_Type))
 
 /* -------------------------------------------------------------------- */
 /* constructor and destructor */
@@ -2419,7 +2423,9 @@ treebuilder_dealloc(TreeBuilderObject *self)
 {
     PyObject_GC_UnTrack(self);
     treebuilder_gc_clear(self);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    PyTypeObject *type = Py_GetType(self);
+    type->tp_free((PyObject *)self);
+    Py_DECREF(type);
 }
 
 /* -------------------------------------------------------------------- */
@@ -3396,7 +3402,9 @@ xmlparser_dealloc(XMLParserObject* self)
 {
     PyObject_GC_UnTrack(self);
     xmlparser_gc_clear(self);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    PyTypeObject *type = Py_GetType(self);
+    type->tp_free((PyObject *)self);
+    Py_DECREF(type);
 }
 
 LOCAL(PyObject*)

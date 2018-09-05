@@ -249,7 +249,10 @@ _blake2_blake2b_copy_impl(BLAKE2bObject *self)
 {
     BLAKE2bObject *cpy;
 
-    if ((cpy = new_BLAKE2bObject(Py_TYPE(self))) == NULL)
+    PyTypeObject *type = Py_GetType(self);
+    cpy = new_BLAKE2bObject(type);
+    Py_DECREF(type);
+    if (cpy == NULL)
         return NULL;
 
     ENTER_HASHLIB(self);

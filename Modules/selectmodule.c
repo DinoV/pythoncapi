@@ -1312,7 +1312,9 @@ static void
 pyepoll_dealloc(pyEpoll_Object *self)
 {
     (void)pyepoll_internal_close(self);
-    Py_TYPE(self)->tp_free(self);
+    PyTypeObject *type = Py_GetType(self);
+    type->tp_free(self);
+    Py_DECREF(type);
 }
 
 /*[clinic input]
@@ -1952,7 +1954,9 @@ static void
 kqueue_queue_dealloc(kqueue_queue_Object *self)
 {
     kqueue_queue_internal_close(self);
-    Py_TYPE(self)->tp_free(self);
+    PyTypeObject *type = Py_GetType(self);
+    type->tp_free(self);
+    Py_DECREF(type);
 }
 
 /*[clinic input]
@@ -2068,8 +2072,8 @@ select_kqueue_control_impl(kqueue_queue_Object *self, PyObject *changelist,
                                       otimeout, _PyTime_ROUND_TIMEOUT) < 0) {
             PyErr_Format(PyExc_TypeError,
                 "timeout argument must be a number "
-                "or None, got %.200s",
-                Py_TYPE(otimeout)->tp_name);
+                "or None, got %T",
+                otimeout);
             return NULL;
         }
 

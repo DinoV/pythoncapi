@@ -85,7 +85,7 @@ static PyMemberDef DB_members[] = {
 
 /* forward declaration */
 static PyTypeObject UCD_Type;
-#define UCD_Check(o) (Py_TYPE(o)==&UCD_Type)
+#define UCD_Check(o) (Py_TYPE_IS(o, &UCD_Type))
 
 static PyObject*
 new_previous_version(const char*name, const change_record* (*getrecord)(Py_UCS4),

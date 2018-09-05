@@ -142,7 +142,9 @@ _DictRemover_dealloc(PyObject *myself)
     DictRemoverObject *self = (DictRemoverObject *)myself;
     Py_XDECREF(self->key);
     Py_XDECREF(self->dict);
-    Py_TYPE(self)->tp_free(myself);
+    PyTypeObject *type = Py_GetType(self);
+    type->tp_free(myself);
+    Py_DECREF(type);
 }
 
 static PyObject *
@@ -704,7 +706,6 @@ CDataType_from_param(PyObject *type, PyObject *value)
     if (PyCArg_CheckExact(value)) {
         PyCArgObject *p = (PyCArgObject *)value;
         PyObject *ob = p->obj;
-        const char *ob_name;
         StgDictObject *dict;
         dict = PyType_stgdict(type);
 
@@ -719,10 +720,9 @@ CDataType_from_param(PyObject *type, PyObject *value)
                 return value;
             }
         }
-        ob_name = (ob) ? Py_TYPE(ob)->tp_name : "???";
         PyErr_Format(PyExc_TypeError,
-                     "expected %s instance instead of pointer to %s",
-                     ((PyTypeObject *)type)->tp_name, ob_name);
+                     "expected %s instance instead of pointer to %T",
+                     ((PyTypeObject *)type)->tp_name, ob);
         return NULL;
     }
 
@@ -733,9 +733,9 @@ CDataType_from_param(PyObject *type, PyObject *value)
         return value;
     }
     PyErr_Format(PyExc_TypeError,
-                 "expected %s instance instead of %s",
+                 "expected %s instance instead of %T",
                  ((PyTypeObject *)type)->tp_name,
-                 Py_TYPE(value)->tp_name);
+                 value);
     return NULL;
 }
 
@@ -1221,8 +1221,8 @@ CharArray_set_value(CDataObject *self, PyObject *value)
 
     if (!PyBytes_Check(value)) {
         PyErr_Format(PyExc_TypeError,
-                     "bytes expected instead of %s instance",
-                     Py_TYPE(value)->tp_name);
+                     "bytes expected instead of %T instance",
+                     value);
         return -1;
     } else
         Py_INCREF(value);
@@ -1277,8 +1277,8 @@ WCharArray_set_value(CDataObject *self, PyObject *value)
     }
     if (!PyUnicode_Check(value)) {
         PyErr_Format(PyExc_TypeError,
-                        "unicode string expected instead of %s instance",
-                        Py_TYPE(value)->tp_name);
+                        "unicode string expected instead of %T instance",
+                        value);
         return -1;
     } else
         Py_INCREF(value);
@@ -2588,7 +2588,9 @@ static void
 PyCData_dealloc(PyObject *self)
 {
     PyCData_clear((CDataObject *)self);
-    Py_TYPE(self)->tp_free(self);
+    PyTypeObject *type = Py_GetType(self);
+    type->tp_free(self);
+    Py_DECREF(type);
 }
 
 static PyMemberDef PyCData_members[] = {
@@ -2658,9 +2660,9 @@ PyCData_reduce(PyObject *myself, PyObject *args)
                         "ctypes objects containing pointers cannot be pickled");
         return NULL;
     }
-    return Py_BuildValue("O(O(NN))",
+    return Py_BuildValue("O(N(NN))",
                          _unpickle,
-                         Py_TYPE(myself),
+                         Py_GetType(myself),
                          PyObject_GetAttrString(myself, "__dict__"),
                          PyBytes_FromStringAndSize(self->b_ptr, self->b_size));
 }
@@ -2687,8 +2689,8 @@ PyCData_setstate(PyObject *myself, PyObject *args)
     }
     if (!PyDict_Check(mydict)) {
         PyErr_Format(PyExc_TypeError,
-                     "%.200s.__dict__ must be a dictionary, not %.200s",
-                     Py_TYPE(myself)->tp_name, Py_TYPE(mydict)->tp_name);
+                     "%T.__dict__ must be a dictionary, not %T",
+                     myself, mydict);
         Py_DECREF(mydict);
         return NULL;
     }
@@ -2921,9 +2923,9 @@ _PyCData_set(CDataObject *dst, PyObject *type, SETFUNC setfunc, PyObject *value,
             Py_RETURN_NONE;
         } else {
             PyErr_Format(PyExc_TypeError,
-                         "expected %s instance, got %s",
+                         "expected %s instance, got %T",
                          ((PyTypeObject *)type)->tp_name,
-                         Py_TYPE(value)->tp_name);
+                         value);
             return NULL;
         }
     }
@@ -2960,8 +2962,8 @@ _PyCData_set(CDataObject *dst, PyObject *type, SETFUNC setfunc, PyObject *value,
 
         if (p1->proto != p2->proto) {
             PyErr_Format(PyExc_TypeError,
-                         "incompatible types, %s instance instead of %s instance",
-                         Py_TYPE(value)->tp_name,
+                         "incompatible types, %T instance instead of %s instance",
+                         value,
                          ((PyTypeObject *)type)->tp_name);
             return NULL;
         }
@@ -2982,8 +2984,8 @@ _PyCData_set(CDataObject *dst, PyObject *type, SETFUNC setfunc, PyObject *value,
         return PyTuple_Pack(2, keep, value);
     }
     PyErr_Format(PyExc_TypeError,
-                 "incompatible types, %s instance instead of %s instance",
-                 Py_TYPE(value)->tp_name,
+                 "incompatible types, %T instance instead of %s instance",
+                 value,
                  ((PyTypeObject *)type)->tp_name);
     return NULL;
 }
@@ -3228,11 +3230,11 @@ _check_outarg_type(PyObject *arg, Py_ssize_t index)
     }
 
     PyErr_Format(PyExc_TypeError,
-                 "'out' parameter %d must be a pointer type, not %s",
+                 "'out' parameter %d must be a pointer type, not %T",
                  Py_SAFE_DOWNCAST(index, Py_ssize_t, int),
                  PyType_Check(arg) ?
                  ((PyTypeObject *)arg)->tp_name :
-             Py_TYPE(arg)->tp_name);
+                 arg);
     return 0;
 }
 
@@ -4062,7 +4064,9 @@ static void
 PyCFuncPtr_dealloc(PyCFuncPtrObject *self)
 {
     PyCFuncPtr_clear(self);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    PyTypeObject *type = Py_GetType(self);
+    type->tp_free((PyObject *)self);
+    Py_DECREF(type);
 }
 
 static PyObject *
@@ -4070,14 +4074,13 @@ PyCFuncPtr_repr(PyCFuncPtrObject *self)
 {
 #ifdef MS_WIN32
     if (self->index)
-        return PyUnicode_FromFormat("<COM method offset %d: %s at %p>",
+        return PyUnicode_FromFormat("<COM method offset %d: %T at %p>",
                                    self->index - 0x1000,
-                                   Py_TYPE(self)->tp_name,
+                                   self,
                                    self);
 #endif
-    return PyUnicode_FromFormat("<%s object at %p>",
-                               Py_TYPE(self)->tp_name,
-                               self);
+    return PyUnicode_FromFormat("<%T object at %p>",
+                               self, self);
 }
 
 static int
@@ -4224,8 +4227,10 @@ Struct_init(PyObject *self, PyObject *args, PyObject *kwds)
         return -1;
     }
     if (PyTuple_GET_SIZE(args)) {
-        Py_ssize_t res = _init_pos_args(self, Py_TYPE(self),
+        PyTypeObject *type = Py_GetType(self);
+        Py_ssize_t res = _init_pos_args(self, type,
                                         args, kwds, 0);
+        Py_DECREF(type);
         if (res == -1)
             return -1;
         if (res < PyTuple_GET_SIZE(args)) {
@@ -4768,10 +4773,13 @@ static PyGetSetDef Simple_getsets[] = {
 static PyObject *
 Simple_from_outparm(PyObject *self, PyObject *args)
 {
-    if (_ctypes_simple_instance((PyObject *)Py_TYPE(self))) {
+    PyTypeObject *type = Py_GetType(self);
+    if (_ctypes_simple_instance((PyObject *)type)) {
+        Py_DECREF(type);
         Py_INCREF(self);
         return self;
     }
+    Py_DECREF(type);
     /* call stgdict->getfunc */
     return Simple_get_value((CDataObject *)self);
 }
@@ -4805,17 +4813,20 @@ Simple_repr(CDataObject *self)
 {
     PyObject *val, *result;
 
-    if (Py_TYPE(self)->tp_base != &Simple_Type) {
-        return PyUnicode_FromFormat("<%s object at %p>",
-                                   Py_TYPE(self)->tp_name, self);
+    PyTypeObject *type = Py_GetType(self);
+    if (type->tp_base != &Simple_Type) {
+        Py_DECREF(type);
+        return PyUnicode_FromFormat("<%T object at %p>",
+                                   self, self);
     }
+    Py_DECREF(type);
 
     val = Simple_get_value(self);
     if (val == NULL)
         return NULL;
 
-    result = PyUnicode_FromFormat("%s(%R)",
-                                  Py_TYPE(self)->tp_name, val);
+    result = PyUnicode_FromFormat("%T(%R)",
+                                  self, val);
     Py_DECREF(val);
     return result;
 }
@@ -4974,9 +4985,9 @@ Pointer_set_contents(CDataObject *self, PyObject *value, void *closure)
             return -1;
         if (!res) {
             PyErr_Format(PyExc_TypeError,
-                         "expected %s instead of %s",
+                         "expected %s instead of %T",
                          ((PyTypeObject *)(stgdict->proto))->tp_name,
-                         Py_TYPE(value)->tp_name);
+                         value);
             return -1;
         }
     }
@@ -5265,8 +5276,12 @@ comerror_init(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *a;
     int status;
 
-    if (!_PyArg_NoKeywords(Py_TYPE(self)->tp_name, kwds))
+    PyTypeObject *type = Py_GetType(self);
+    if (!_PyArg_NoKeywords(type->tp_name, kwds)) {
+        Py_DECREF(type);
         return -1;
+    }
+    Py_DECREF(type);
 
     if (!PyArg_ParseTuple(args, "OOO:COMError", &hresult, &text, &details))
         return -1;
@@ -5374,11 +5389,20 @@ cast_check_pointertype(PyObject *arg)
             return 1;
         }
     }
+    PyTypeObject *type;
+    const char *tp_name;
+    if (PyType_Check(arg)) {
+        type = NULL;
+        tp_name = ((PyTypeObject *)arg)->tp_name;
+    }
+    else {
+        type = Py_GetType(arg);
+        tp_name = type->tp_name;
+    }
     PyErr_Format(PyExc_TypeError,
                  "cast() argument 2 must be a pointer type, not %s",
-                 PyType_Check(arg)
-                 ? ((PyTypeObject *)arg)->tp_name
-                 : Py_TYPE(arg)->tp_name);
+                 tp_name);
+    Py_XDECREF(type);
     return 0;
 }
 

@@ -91,7 +91,9 @@ static void pysqlite_cursor_dealloc(pysqlite_Cursor* self)
         PyObject_ClearWeakRefs((PyObject*)self);
     }
 
-    Py_TYPE(self)->tp_free((PyObject*)self);
+    PyTypeObject *type = Py_GetType(self);
+    type->tp_free((PyObject*)self);
+    Py_DECREF(type);
 }
 
 PyObject* _pysqlite_get_converter(PyObject* key)

@@ -111,8 +111,8 @@ static PyTypeObject TaskType;
 static PyTypeObject PyRunningLoopHolder_Type;
 
 
-#define Future_CheckExact(obj) (Py_TYPE(obj) == &FutureType)
-#define Task_CheckExact(obj) (Py_TYPE(obj) == &TaskType)
+#define Future_CheckExact(obj) (Py_TYPE_IS(obj, &FutureType))
+#define Task_CheckExact(obj) (Py_TYPE_IS(obj, &TaskType))
 
 #define Future_Check(obj) PyObject_TypeCheck(obj, &FutureType)
 #define Task_Check(obj) PyObject_TypeCheck(obj, &TaskType)
@@ -158,9 +158,12 @@ _is_coroutine(PyObject *coro)
            positive types.  That shouldn't ever happen, unless
            someone stressing the system on purpose.
         */
-        if (PySet_Add(iscoroutine_typecache, (PyObject*) Py_TYPE(coro))) {
+        PyTypeObject *type = Py_GetType(coro);
+        if (PySet_Add(iscoroutine_typecache, (PyObject*)type)) {
+            Py_DECREF(type);
             return -1;
         }
+        Py_DECREF(type);
     }
 
     return 1;
@@ -183,8 +186,9 @@ is_coroutine(PyObject *coro)
        This cache allows us to avoid the cost of even calling
        a pure-Python function in 99.9% cases.
     */
-    int has_it = PySet_Contains(
-        iscoroutine_typecache, (PyObject*) Py_TYPE(coro));
+    PyTypeObject *type = Py_GetType(coro);
+    int has_it = PySet_Contains(iscoroutine_typecache, (PyObject*) type);
+    Py_DECREF(type);
     if (has_it == 0) {
         /* type(coro) is not in iscoroutine_typecache */
         return _is_coroutine(coro);
@@ -255,7 +259,7 @@ get_running_loop(PyObject **loop)
         cached_running_holder_tsid = ts->id;
     }
 
-    assert(Py_TYPE(rl) == &PyRunningLoopHolder_Type);
+    assert(Py_TYPE_IS(rl, &PyRunningLoopHolder_Type));
     PyObject *running_loop = ((PyRunningLoopHolder *)rl)->rl_loop;
 
     if (running_loop == Py_None) {
@@ -577,7 +581,7 @@ future_set_exception(FutureObj *fut, PyObject *exc)
         PyErr_SetString(PyExc_TypeError, "invalid exception object");
         return NULL;
     }
-    if ((PyObject*)Py_TYPE(exc_val) == PyExc_StopIteration) {
+    if (Py_TYPE_IS(exc_val, (PyTypeObject*)PyExc_StopIteration)) {
         Py_DECREF(exc_val);
         PyErr_SetString(PyExc_TypeError,
                         "StopIteration interacts badly with generators "
@@ -1308,8 +1312,10 @@ FutureObj_repr(FutureObj *fut)
     }
 
     PyObject *rstr = NULL;
-    PyObject *type_name = PyObject_GetAttrString((PyObject*)Py_TYPE(fut),
+    PyTypeObject *type = Py_GetType(fut);
+    PyObject *type_name = PyObject_GetAttrString((PyObject*)type,
                                                  "__name__");
+    Py_DECREF(type);
     if (type_name != NULL) {
         rstr = PyUnicode_FromFormat("<%S %U>", type_name, rinfo_s);
         Py_DECREF(type_name);
@@ -1347,7 +1353,9 @@ FutureObj_finalize(FutureObj *fut)
         goto finally;
     }
 
-    type_name = PyObject_GetAttrString((PyObject*)Py_TYPE(fut), "__name__");
+    PyTypeObject *type = Py_GetType(fut);
+    type_name = PyObject_GetAttrString((PyObject*)type, "__name__");
+    Py_DECREF(type);
     if (type_name == NULL) {
         goto finally;
     }
@@ -1476,7 +1484,9 @@ FutureObj_dealloc(PyObject *self)
     }
 
     (void)FutureObj_clear(fut);
-    Py_TYPE(fut)->tp_free(fut);
+    PyTypeObject *type = Py_GetType(fut);
+    type->tp_free(fut);
+    Py_DECREF(type);
 }
 
 
@@ -1702,7 +1712,9 @@ TaskStepMethWrapper_dealloc(TaskStepMethWrapper *o)
 {
     PyObject_GC_UnTrack(o);
     (void)TaskStepMethWrapper_clear(o);
-    Py_TYPE(o)->tp_free(o);
+    PyTypeObject *type = Py_GetType(o);
+    type->tp_free(o);
+    Py_DECREF(type);
 }
 
 static PyObject *
@@ -1816,7 +1828,9 @@ TaskWakeupMethWrapper_dealloc(TaskWakeupMethWrapper *o)
 {
     PyObject_GC_UnTrack(o);
     (void)TaskWakeupMethWrapper_clear(o);
-    Py_TYPE(o)->tp_free(o);
+    PyTypeObject *type = Py_GetType(o);
+    type->tp_free(o);
+    Py_DECREF(type);
 }
 
 static PyTypeObject TaskWakeupMethWrapper_Type = {
@@ -2503,7 +2517,9 @@ TaskObj_dealloc(PyObject *self)
     }
 
     (void)TaskObj_clear(task);
-    Py_TYPE(task)->tp_free(task);
+    PyTypeObject *type = Py_GetType(task);
+    type->tp_free(task);
+    Py_DECREF(type);
 }
 
 static int

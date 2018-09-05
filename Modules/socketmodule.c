@@ -1647,8 +1647,8 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             PyErr_Format(
                 PyExc_TypeError,
                 "getsockaddrarg: "
-                "AF_NETLINK address must be tuple, not %.500s",
-                Py_TYPE(args)->tp_name);
+                "AF_NETLINK address must be tuple, not %T",
+                args);
             return 0;
         }
         if (!PyArg_ParseTuple(args, "II:getsockaddrarg", &pid, &groups))
@@ -1672,8 +1672,8 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             PyErr_Format(
                 PyExc_TypeError,
                 "getsockaddrarg: "
-                "AF_VSOCK address must be tuple, not %.500s",
-                Py_TYPE(args)->tp_name);
+                "AF_VSOCK address must be tuple, not %T",
+                args);
             return 0;
         }
         if (!PyArg_ParseTuple(args, "II:getsockaddrarg", &cid, &port))
@@ -1701,8 +1701,8 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             PyErr_Format(
                 PyExc_TypeError,
                 "getsockaddrarg: "
-                "AF_INET address must be tuple, not %.500s",
-                Py_TYPE(args)->tp_name);
+                "AF_INET address must be tuple, not %T",
+                args);
             return 0;
         }
         if (!PyArg_ParseTuple(args, "O&i:getsockaddrarg",
@@ -1738,8 +1738,8 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             PyErr_Format(
                 PyExc_TypeError,
                 "getsockaddrarg: "
-                "AF_INET6 address must be tuple, not %.500s",
-                Py_TYPE(args)->tp_name);
+                "AF_INET6 address must be tuple, not %T",
+                args);
             return 0;
         }
         if (!PyArg_ParseTuple(args, "O&i|II",
@@ -1885,8 +1885,8 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             PyErr_Format(
                 PyExc_TypeError,
                 "getsockaddrarg: "
-                "AF_PACKET address must be tuple, not %.500s",
-                Py_TYPE(args)->tp_name);
+                "AF_PACKET address must be tuple, not %T",
+                args);
             return 0;
         }
         if (!PyArg_ParseTuple(args, "si|iiy*", &interfaceName,
@@ -1942,8 +1942,8 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             PyErr_Format(
                 PyExc_TypeError,
                 "getsockaddrarg: "
-                "AF_TIPC address must be tuple, not %.500s",
-                Py_TYPE(args)->tp_name);
+                "AF_TIPC address must be tuple, not %T",
+                args);
             return 0;
         }
 
@@ -2779,13 +2779,16 @@ sock_setsockopt(PySocketSockObject *s, PyObject *args)
 
     PyErr_Clear();
     /* setsockopt(level, opt, None, flag) */
+    PyTypeObject *none_type = Py_GetType(Py_None);
     if (PyArg_ParseTuple(args, "iiO!I:setsockopt",
-                         &level, &optname, Py_TYPE(Py_None), &none, &optlen)) {
+                         &level, &optname, none_type, &none, &optlen)) {
+        Py_DECREF(none_type);
         assert(sizeof(socklen_t) >= sizeof(unsigned int));
         res = setsockopt(s->sock_fd, level, optname,
                          NULL, (socklen_t)optlen);
         goto done;
     }
+    Py_DECREF(none_type);
 
     PyErr_Clear();
     /* setsockopt(level, opt, buffer) */
@@ -4813,7 +4816,9 @@ sock_dealloc(PySocketSockObject *s)
     if (PyObject_CallFinalizerFromDealloc((PyObject *)s) < 0)
         return;
 
-    Py_TYPE(s)->tp_free((PyObject *)s);
+    PyTypeObject *type = Py_GetType(s);
+    type->tp_free((PyObject *)s);
+    Py_DECREF(type);
 }
 
 
@@ -5884,8 +5889,8 @@ socket_ntohl(PyObject *self, PyObject *arg)
     }
     else
         return PyErr_Format(PyExc_TypeError,
-                            "expected int, %s found",
-                            Py_TYPE(arg)->tp_name);
+                            "expected int, %T found",
+                            arg);
     return PyLong_FromUnsignedLong(ntohl(x));
 }
 
@@ -5955,8 +5960,8 @@ socket_htonl(PyObject *self, PyObject *arg)
     }
     else
         return PyErr_Format(PyExc_TypeError,
-                            "expected int, %s found",
-                            Py_TYPE(arg)->tp_name);
+                            "expected int, %T found",
+                            arg);
     return PyLong_FromUnsignedLong(htonl((unsigned long)x));
 }
 

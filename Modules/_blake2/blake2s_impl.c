@@ -249,8 +249,12 @@ _blake2_blake2s_copy_impl(BLAKE2sObject *self)
 {
     BLAKE2sObject *cpy;
 
-    if ((cpy = new_BLAKE2sObject(Py_TYPE(self))) == NULL)
+    PyTypeObject *type = Py_GetType(self);
+    if ((cpy = new_BLAKE2sObject(type)) == NULL) {
+        Py_DECREF(type);
         return NULL;
+    }
+    Py_DECREF(type);
 
     ENTER_HASHLIB(self);
     cpy->param = self->param;

@@ -1,6 +1,7 @@
 TODO list for new Python C API
 ==============================
 
+* Write a tool to automate migration from the old C API to the new C API
 * capi_tests: check for reference leaks
 * Modify PyObject_INIT(op, type) macro to return op again? use an inlined
   function?
@@ -11,12 +12,12 @@ Replace Py_TYPE()
 
 Dealloc::
 
-    Py_TYPE(op)->tp_free((PyObject *)op);
+    Py_TYPE(self)->tp_free((PyObject *)self);
 
 becomes::
 
-    PyTypeObject *type = Py_GetType(op);
-    type->tp_free((PyObject *)op);
+    PyTypeObject *type = Py_GetType(self);
+    type->tp_free((PyObject *)self);
     Py_DECREF(type);
 
 Size::

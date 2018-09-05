@@ -2828,14 +2828,22 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
     case 'T':
     {
         PyObject *obj = va_arg(*vargs, PyObject *);
-        PyTypeObject *type = Py_GetType(obj);
-        const char *type_name = type->tp_name;
-        size_t len = strlen(type_name);
-        if (unicode_fromformat_write_cstr(writer, type_name, -1, -1) < 0) {
+        if (obj != NULL) {
+            PyTypeObject *type = Py_GetType(obj);
+            const char *type_name = type->tp_name;
+            if (unicode_fromformat_write_cstr(writer, type_name, -1, -1) < 0) {
+                Py_DECREF(type);
+                return NULL;
+            }
             Py_DECREF(type);
-            return NULL;
         }
-        Py_DECREF(type);
+        else {
+            const char *null = "<NULL>";
+            const size_t len = strlen(null);
+            if (_PyUnicodeWriter_WriteASCIIString(writer, null, len) < 0) {
+                return NULL;
+            }
+        }
         break;
     }
 

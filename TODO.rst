@@ -11,10 +11,10 @@ Remove Py_TYPE()?
 
 Error::
 
-        PyErr_Format(PyExc_TypeError,
-                     "Struct() argument 1 must be a str or bytes object, "
-                     "not %.200s",
-                     Py_TYPE(format)->tp_name);
+     PyErr_Format(PyExc_TypeError,
+                  "Struct() argument 1 must be a str or bytes object, "
+                  "not %.200s",
+                  Py_TYPE(format)->tp_name);
 
 Dealloc::
 

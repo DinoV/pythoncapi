@@ -455,10 +455,10 @@ typedef struct _typeobject {
     do { _Py_TYPE(ob) = (type); } while (0)
 
 #ifdef Py_NEWCAPI_NO_STRUCT
-PyAPI_FUNC(PyTypeObject*) _Py_TYPE_impl(PyObject *op);
-#define Py_TYPE(ob) _Py_TYPE_impl((PyObject *)(ob))
+   PyAPI_FUNC(PyTypeObject*) _Py_TYPE_impl(PyObject *op);
+#  define Py_TYPE(ob) _Py_TYPE_impl((PyObject *)(ob))
 #else
-#define Py_TYPE(ob) _Py_TYPE(ob)
+#  define Py_TYPE(ob) _Py_TYPE(ob)
 #endif
 
 

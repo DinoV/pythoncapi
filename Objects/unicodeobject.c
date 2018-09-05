@@ -2825,6 +2825,21 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
         break;
     }
 
+    case 'T':
+    {
+        PyObject *obj = va_arg(*vargs, PyObject *);
+        PyTypeObject *type = Py_TYPE(obj);
+        Py_INCREF(type);
+        const char *type_name = type->tp_name;
+        size_t len = strlen(type_name);
+        if (unicode_fromformat_write_cstr(writer, type_name, -1, -1) < 0) {
+            Py_DECREF(type);
+            return NULL;
+        }
+        Py_DECREF(type);
+        break;
+    }
+
     case '%':
         if (_PyUnicodeWriter_WriteCharInline(writer, '%') < 0)
             return NULL;
@@ -13693,6 +13708,7 @@ _PyUnicodeWriter_WriteLatin1String(_PyUnicodeWriter *writer,
                                    const char *str, Py_ssize_t len)
 {
     Py_UCS4 maxchar;
+    assert(len >= 0);
 
     maxchar = ucs1lib_find_max_char((Py_UCS1*)str, (Py_UCS1*)str + len);
     if (_PyUnicodeWriter_Prepare(writer, len, maxchar) == -1)

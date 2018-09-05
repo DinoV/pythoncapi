@@ -449,17 +449,25 @@ typedef struct _typeobject {
 #endif
 
 
+PyAPI_FUNC(PyTypeObject*) _Py_GetType(PyObject *op);
+#define Py_GetType(ob) _Py_GetType((PyObject *)(ob))
 
 #define _Py_TYPE(ob)  (((PyObject*)(ob))->ob_type)
 #define _Py_SET_TYPE(ob, type) \
     do { _Py_TYPE(ob) = (type); } while (0)
 
 #ifdef Py_NEWCAPI_NO_STRUCT
-   PyAPI_FUNC(PyTypeObject*) _Py_TYPE_impl(PyObject *op);
-#  define Py_TYPE(ob) _Py_TYPE_impl((PyObject *)(ob))
+   /* Py_TYPE() is not part of the Py_NEWCAPI because it returns a borrowed
+      reference */
+#  ifndef Py_NEWCAPI
+     PyAPI_FUNC(PyTypeObject*) _Py_TYPE_impl(PyObject *op);
+#    define Py_TYPE(ob) _Py_TYPE_impl((PyObject *)(ob))
+#  endif
 #else
 #  define Py_TYPE(ob) _Py_TYPE(ob)
 #endif
+
+#define Py_TYPE_IS(ob, type) (_Py_TYPE(ob) == (type))
 
 
 typedef struct{

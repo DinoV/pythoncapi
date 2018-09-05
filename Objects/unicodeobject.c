@@ -2828,8 +2828,7 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
     case 'T':
     {
         PyObject *obj = va_arg(*vargs, PyObject *);
-        PyTypeObject *type = Py_TYPE(obj);
-        Py_INCREF(type);
+        PyTypeObject *type = Py_GetType(obj);
         const char *type_name = type->tp_name;
         size_t len = strlen(type_name);
         if (unicode_fromformat_write_cstr(writer, type_name, -1, -1) < 0) {

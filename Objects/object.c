@@ -48,6 +48,17 @@ _Py_REFCNT_impl(PyObject *op)
 
 
 PyTypeObject*
+_Py_GetType(PyObject *op)
+{
+    PyTypeObject *type = _Py_TYPE(op);
+    assert(type != NULL);
+    Py_INCREF(type);
+    return type;
+}
+
+
+
+PyTypeObject*
 _Py_TYPE_impl(PyObject *op)
 {
     return _Py_TYPE(op);

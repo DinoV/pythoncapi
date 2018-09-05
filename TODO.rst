@@ -6,6 +6,52 @@ TODO list for new Python C API
   function?
 * Do we need ``PySequence_Fast_GetItemRef()``?
 
+Replace Py_TYPE()
+=================o
+
+Dealloc::
+
+    Py_TYPE(op)->tp_free((PyObject *)op);
+
+becomes::
+
+    PyTypeObject *type = Py_GetType(op);
+    type->tp_free((PyObject *)op);
+    Py_DECREF(type);
+
+Size::
+
+    res = _PyObject_SIZE(Py_TYPE(self)) + self->allocated * self->ob_descr->itemsize;
+
+becomes::
+
+    PyTypeObject *type = Py_GetType(self);
+    res = _PyObject_SIZE(type) + self->allocated * self->ob_descr->itemsize;
+    Py_DECREF(type);
+
+Error::
+
+     PyErr_Format(PyExc_TypeError,
+         "first argument must be a type object, not %.200s",
+         Py_TYPE(arraytype)->tp_name);
+
+becomes::
+
+     PyErr_Format(PyExc_TypeError,
+                  "first argument must be a type object, not %T",
+                  arraytype);
+
+Py_BuildValue::
+
+     result = Py_BuildValue(
+         "N(CO)O", Py_GetType(self), typecode, list, dict);
+
+becomes::
+
+     result = Py_BuildValue(
+         "N(CO)O", Py_GetType(self), typecode, list, dict);
+
+
 Remove Py_TYPE()?
 =================
 

@@ -6,6 +6,7 @@ TODO list for new Python C API
 * Modify PyObject_INIT(op, type) macro to return op again? use an inlined
   function?
 * Do we need ``PySequence_Fast_GetItemRef()``?
+* Enhance documentation to document reference counting
 
 Replace Py_TYPE()
 =================o
